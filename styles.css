@@ -32,14 +32,14 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 1rem 2rem;
+    padding: 2.5rem 2.5rem;
     background: #181825;
     border-bottom: 1px solid #313244;
     z-index: 50;
 }
 
 .logo {
-    font-size: 1.4rem;
+    font-size: 1.8rem;
     font-weight: 700;
     color: #89b4fa;
     letter-spacing: -0.02em;
