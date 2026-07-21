@@ -539,6 +539,53 @@ body {
     font-weight: 500;
 }
 
+
+/* Toggle de idioma */
+.language-toggle {
+    margin-top: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    cursor: pointer;
+    user-select: none;
+}
+
+.lang-label {
+    font-size: 0.85rem;
+    color: #585b70;
+    transition: color 0.3s;
+}
+
+.lang-label.lang-active {
+    color: #89b4fa;
+    font-weight: 600;
+}
+
+.toggle-track {
+    width: 44px;
+    height: 24px;
+    background: #313244;
+    border-radius: 12px;
+    position: relative;
+    transition: background 0.3s;
+}
+
+.toggle-ball {
+    width: 18px;
+    height: 18px;
+    background: #89b4fa;
+    border-radius: 50%;
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    transition: left 0.3s ease;
+    box-shadow: 0 0 6px rgba(137, 180, 250, 0.5);
+}
+
+.toggle-ball.right {
+    left: 23px;
+}
+
 @media (max-width: 600px) {
     .difficulty-cards {
         flex-direction: column;

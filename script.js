@@ -533,3 +533,22 @@ window.addEventListener('load', () => {
     if (menuScreen) menuScreen.style.display = '';
     if (gameContainer) gameContainer.style.display = 'none';
 });
+
+// --- LANGUAGE TOGGLE (frontend only) ---
+let currentLanguage = 'es';
+function toggleLanguage() {
+    currentLanguage = currentLanguage === 'es' ? 'en' : 'es';
+    const ball = document.getElementById('toggleBall');
+    const langEs = document.getElementById('langEs');
+    const langEn = document.getElementById('langEn');
+
+    if (currentLanguage === 'en') {
+        ball.classList.add('right');
+        langEs.classList.remove('lang-active');
+        langEn.classList.add('lang-active');
+    } else {
+        ball.classList.remove('right');
+        langEn.classList.remove('lang-active');
+        langEs.classList.add('lang-active');
+    }
+}
