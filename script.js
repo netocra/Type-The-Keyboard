@@ -270,6 +270,7 @@ function endGame() {
     cursor.style.display = 'none';
     bombEl.style.display = 'none';
     textDisplay.style.display = 'none';
+    startHint.style.display = 'none';
     statsBar.classList.remove('visible');
 
     const elapsed = gameTime;
@@ -303,6 +304,7 @@ function restartGame() {
     bombEl.style.display = 'none';
     bombEl.classList.remove('exploding');
     textDisplay.style.display = '';
+    startHint.style.display = '';
     resultsDiv.classList.remove('active');
     statsBar.classList.remove('visible');
     liveWpm.textContent = '0';
@@ -316,38 +318,11 @@ function restartGame() {
 // --- INPUT ---
 document.addEventListener('keydown', function(e) {
     if (finished) {
-        if (e.key === 'Tab') {
-            e.preventDefault();
-            tabPressed = true;
-            return;
-        }
-        if (e.key === 'Enter' && tabPressed) {
-            e.preventDefault();
-            tabPressed = false;
-            restartGame();
-            return;
-        }
-        tabPressed = false;
         return;
-    }
-
-    if (e.key === 'Tab') {
-        e.preventDefault();
-        tabPressed = true;
-        return;
-    }
-    if (e.key === 'Enter' && tabPressed) {
-        e.preventDefault();
-        tabPressed = false;
-        restartGame();
-        return;
-    }
-    if (e.key !== 'Tab') {
-        tabPressed = false;
     }
 
     if (e.ctrlKey || e.altKey || e.metaKey) return;
-    if (['Shift', 'CapsLock', 'Escape', 'Enter'].includes(e.key)) return;
+    if (['Shift', 'CapsLock', 'Escape', 'Enter', 'Tab'].includes(e.key)) return;
 
     e.preventDefault();
 

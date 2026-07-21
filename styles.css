@@ -20,14 +20,22 @@ body {
     width: 100%;
     max-width: 900px;
     padding: 2rem;
+    padding-top: 5rem;
 }
 
 /* Header */
 .header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    margin-bottom: 3rem;
+    justify-content: center;
+    padding: 1rem 2rem;
+    background: #181825;
+    border-bottom: 1px solid #313244;
+    z-index: 50;
 }
 
 .logo {
@@ -134,7 +142,7 @@ body {
 .start-hint {
     color: #585b70;
     font-size: 0.9rem;
-    margin-bottom: 0.8rem;
+    margin-bottom: 1.8rem;
     transition: opacity 0.3s;
     text-align: center;
 }
@@ -214,7 +222,7 @@ body {
 .back-to-menu-btn {
     background: none;
     border: none;
-    color: #45475a;
+    color: #89b4fa;
     font-family: inherit;
     font-size: 0.8rem;
     cursor: pointer;
@@ -312,6 +320,7 @@ body {
     justify-content: center;
     min-height: 100vh;
     padding: 2rem;
+    padding-top: 5rem;
     animation: fadeIn 0.4s ease;
 }
 

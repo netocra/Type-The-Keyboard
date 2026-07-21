@@ -7,6 +7,11 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <!-- Header global -->
+    <div class="header">
+        <div class="logo">Type The Keyboard</div>
+    </div>
+
     <!-- MENÚ DE DIFICULTAD  -->
     <div class="menu-screen" id="menuScreen">
         <div class="menu-title">Type The Keyboard </div>
@@ -38,11 +43,6 @@
 
     <!-- JUEGO -->
     <div class="container" id="gameContainer" style="display:none;">
-        <!-- Header -->
-        <div class="header">
-            <div class="logo">typeflow</div>
-        </div>
-
         <!-- Stats en vivo -->
         <div class="stats-bar" id="statsBar">
             <div class="stat-item">
@@ -88,13 +88,10 @@
                 </div>
             </div>
             <button class="restart-btn" onclick="restartGame()">Reiniciar</button>
-            <div class="restart-hint">o presiona Tab + Enter</div>
         </div>
 
-        <button class="back-to-menu-btn" onclick="goToMenu()">← Cambiar dificultad</button>
+        <button class="back-to-menu-btn" onclick="goToMenu()">← Regresar</button>
     </div>
-
-    <div class="footer">tab + enter = reiniciar</div>
 
     <script src="script.js"></script>
 </body>
