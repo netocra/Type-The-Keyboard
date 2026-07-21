@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Type The Keyboard</title>
     <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
     <!-- Header global -->
     <div class="header">
@@ -14,27 +16,31 @@
 
     <!-- MENÚ DE DIFICULTAD  -->
     <div class="menu-screen" id="menuScreen">
-        <div class="menu-subtitle">Escribe lo más rápido que puedas. La bomba te persigue — si te alcanza, pierdes la palabra. Elige tu dificultad:</div>
+        <div class="menu-subtitle">Escribe lo más rápido que puedas. La bomba te persigue — si te alcanza, pierdes la
+            palabra. Elige tu dificultad:</div>
 
         <div class="difficulty-cards">
             <div class="difficulty-card easy" onclick="selectDifficulty('easy')">
                 <div class="difficulty-icon"><img src="img/img-easy.png" alt="Fácil"></div>
                 <div class="difficulty-name">Fácil</div>
-                <div class="difficulty-desc">La bomba avanza lento. Ideal para principiantes que están aprendiendo a ubicar las teclas.</div>
+                <div class="difficulty-desc">La bomba avanza lento. Ideal para principiantes que están aprendiendo a
+                    ubicar las teclas.</div>
                 <div class="difficulty-speed">💣 2s por letra</div>
             </div>
 
             <div class="difficulty-card medium" onclick="selectDifficulty('medium')">
                 <div class="difficulty-icon"><img src="img/img-medium.png" alt="Medio"></div>
                 <div class="difficulty-name">Medio</div>
-                <div class="difficulty-desc">Velocidad moderada. Para quienes ya conocen el teclado y quieren mejorar su ritmo.</div>
+                <div class="difficulty-desc">Velocidad moderada. Para quienes ya conocen el teclado y quieren mejorar su
+                    ritmo.</div>
                 <div class="difficulty-speed">💣 1.3s por letra</div>
             </div>
 
             <div class="difficulty-card hard" onclick="selectDifficulty('hard')">
                 <div class="difficulty-icon"><img src="img/img-hard.png" alt="Difícil"></div>
                 <div class="difficulty-name">Difícil</div>
-                <div class="difficulty-desc">La bomba es implacable. Solo para expertos con reflejos rápidos y dedos ágiles.</div>
+                <div class="difficulty-desc">La bomba es implacable. Solo para expertos con reflejos rápidos y dedos
+                    ágiles.</div>
                 <div class="difficulty-speed">💣 0.8s por letra</div>
             </div>
         </div>
@@ -56,34 +62,45 @@
                 <div class="stat-value" id="liveTimer">15</div>
                 <div class="stat-label">seg</div>
             </div>
+            <div class="stat-item">
+                <div class="stat-value" id="liveScore">0</div>
+                <div class="stat-label">puntos</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="liveSentences">0</div>
+                <div class="stat-label">oraciones</div>
+            </div>
+        </div>
+
+        <!-- Zona de oraciones acumuladas -->
+        <div class="accumulated-sentences" id="accumulatedSentences">
+            <!-- Palabras completadas aparecerán aquí -->
         </div>
 
         <!-- Zona de escritura -->
         <span class="start-hint" id="startHint">Empieza a escribir...</span>
         <div class="text-display" id="textDisplay" tabindex="0">
-            <div class="cursor" id="cursor"></div>
-            <div class="bomb" id="bomb" style="display:none;"></div>
+            <!-- Words will be dynamically inserted here -->
         </div>
-        <div class="bomb-warning" id="bombWarning"></div>
 
         <!-- Resultados -->
         <div class="results" id="results">
             <div class="results-grid">
                 <div class="result-card">
-                    <div class="value" id="resultWpm">0</div>
-                    <div class="label">WPM</div>
+                    <div class="value" id="resultScore">0</div>
+                    <div class="label">Puntos</div>
                 </div>
                 <div class="result-card">
-                    <div class="value" id="resultAcc">0%</div>
-                    <div class="label">Precisión</div>
+                    <div class="value" id="resultSentences">0</div>
+                    <div class="label">Oraciones</div>
                 </div>
                 <div class="result-card">
-                    <div class="value" id="resultChars">0</div>
-                    <div class="label">Caracteres</div>
+                    <div class="value" id="resultWords">0</div>
+                    <div class="label">Palabras</div>
                 </div>
                 <div class="result-card">
-                    <div class="value" id="resultErrors">0</div>
-                    <div class="label">Errores</div>
+                    <div class="value" id="resultMissed">0</div>
+                    <div class="label">Perdidas</div>
                 </div>
             </div>
             <button class="restart-btn" onclick="restartGame()">Reiniciar</button>
@@ -94,4 +111,5 @@
 
     <script src="script.js"></script>
 </body>
+
 </html>
