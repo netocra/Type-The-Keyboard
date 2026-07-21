@@ -402,6 +402,12 @@ body {
     margin-bottom: 1rem;
 }
 
+.difficulty-icon img {
+    width: 4rem;
+    height: 4rem;
+    object-fit: contain;
+}
+
 .difficulty-name {
     font-size: 1.1rem;
     font-weight: 600;
