@@ -2,11 +2,11 @@
 
 // --- BANCO DE ORACIONES ---
 const sentenceBank = [
-    "El gato negro salta sobre el muro alto.",
-    "La luna brilla en el cielo nocturno estrellado.",
-    "Los niños juegan felices en el parque verde.",
-    "El viento sopla fuerte entre los árboles altos.",
-    "La música suena alegre durante toda la noche."
+    "el gato negro salta sobre el muro alto",
+    "la luna brilla en el cielo nocturno estrellado",
+    "los ninos juegan felices en el parque verde",
+    "el viento sopla fuerte entre los arboles altos",
+    "la musica suena alegre durante toda la noche"
 ];
 
 // --- STATE ---
@@ -29,9 +29,9 @@ let accumulatedWords = []; // Words that have been typed correctly
 // Game configuration
 let WORD_SPEED = 1.5; // pixels per frame (adjusted per difficulty)
 const WORD_SPACING = 120; // vertical spacing between words
-const HIT_LINE_Y = 400; // Y position of the hit line where typing happens
+const HIT_LINE_Y_RATIO = 1.0; // Hit line at the very bottom of container
+let HIT_LINE_Y = 400; // Will be recalculated on init
 const START_Y = -50; // Words start above the visible area
-const MISS_THRESHOLD = 50; // How far past hit line before marking as missed
 
 // Scoring
 const POINTS_PER_WORD = 10;
@@ -108,9 +108,11 @@ function initGame() {
 
     // Setup UI
     textDisplay.style.position = 'relative';
-    textDisplay.style.height = '500px';
     textDisplay.style.overflow = 'hidden';
     textDisplay.style.display = '';
+
+    // Calculate hit line based on actual container height
+    HIT_LINE_Y = Math.floor(textDisplay.clientHeight * HIT_LINE_Y_RATIO);
 
     // Create hit line
     createHitLine();
@@ -119,7 +121,7 @@ function initGame() {
     createWordElements();
 
     // Show start hint
-    startHint.textContent = 'Start typing to begin...';
+    startHint.textContent = 'Presiona Enter para iniciar...';
     startHint.classList.remove('hidden');
 
     // Reset stats display
@@ -135,20 +137,7 @@ function initGame() {
 
 // --- CREATE HIT LINE ---
 function createHitLine() {
-    let hitLine = document.getElementById('hitLine');
-    if (!hitLine) {
-        hitLine = document.createElement('div');
-        hitLine.id = 'hitLine';
-        hitLine.style.position = 'absolute';
-        hitLine.style.left = '0';
-        hitLine.style.right = '0';
-        hitLine.style.height = '2px';
-        hitLine.style.background = '#89b4fa';
-        hitLine.style.boxShadow = '0 0 10px rgba(137, 180, 250, 0.6)';
-        hitLine.style.zIndex = '10';
-        textDisplay.appendChild(hitLine);
-    }
-    hitLine.style.top = HIT_LINE_Y + 'px';
+    // Hit line removed - the container border serves as the visual limit
 }
 
 // --- CREATE WORD ELEMENTS ---
@@ -172,7 +161,7 @@ function createWordElements() {
         wordDiv.style.fontSize = '1.8rem';
         wordDiv.style.fontWeight = '600';
         wordDiv.style.whiteSpace = 'nowrap';
-        wordDiv.style.transition = 'opacity 0.3s';
+        wordDiv.style.visibility = 'hidden';
 
         textDisplay.appendChild(wordDiv);
         state.element = wordDiv;
@@ -187,6 +176,11 @@ function startGame() {
     gameStartTime = Date.now();
     startHint.classList.add('hidden');
     statsBar.classList.add('visible');
+
+    // Show all words
+    wordStates.forEach(state => {
+        if (state.element) state.element.style.visibility = 'visible';
+    });
 
     // Start animation loop
     animate();
@@ -204,7 +198,19 @@ function animate() {
             state.y += WORD_SPEED;
             allWordsFinished = false;
 
-            // Update visual position
+            // If word reached the hit line, mark as missed immediately (don't render below)
+            if (state.y >= HIT_LINE_Y) {
+                if (index === currentWordIndex) {
+                    markWordAsMissed(index);
+                } else {
+                    state.status = 'missed';
+                    missedWords++;
+                    if (state.element) state.element.style.display = 'none';
+                }
+                return;
+            }
+
+            // Update visual position (only if still above hit line)
             if (state.element) {
                 state.element.style.top = state.y + 'px';
             }
@@ -215,11 +221,6 @@ function animate() {
                 if (index === currentWordIndex) {
                     state.element.style.color = '#89b4fa';
                 }
-            }
-
-            // Check if word passed hit line (missed)
-            if (index === currentWordIndex && state.y > HIT_LINE_Y + MISS_THRESHOLD) {
-                markWordAsMissed(index);
             }
         } else {
             // Word is completed or missed, check if all are done
@@ -281,6 +282,18 @@ function addWordToAccumulated(word) {
 }
 
 // --- MARK WORD AS MISSED ---
+function addMissedWordToAccumulated(word) {
+    const wordSpan = document.createElement('span');
+    wordSpan.className = 'word-accumulated';
+    wordSpan.textContent = word;
+    wordSpan.style.color = '#f38ba8';
+    accumulatedSentences.appendChild(wordSpan);
+
+    // Add space after word
+    const space = document.createTextNode(' ');
+    accumulatedSentences.appendChild(space);
+}
+
 function markWordAsMissed(index) {
     const state = wordStates[index];
     if (state.status === 'missed' || state.status === 'completed') return;
@@ -290,16 +303,11 @@ function markWordAsMissed(index) {
 
     // Visual feedback
     if (state.element) {
-        state.element.style.color = '#f38ba8';
-        state.element.style.opacity = '0.5';
-
-        // Flash effect
-        setTimeout(() => {
-            if (state.element) {
-                state.element.style.opacity = '0';
-            }
-        }, 200);
+        state.element.style.display = 'none';
     }
+
+    // Add missed word to accumulated area in red
+    addMissedWordToAccumulated(words[index]);
 
     // Move to next word
     currentWordIndex++;
@@ -330,17 +338,7 @@ function markWordAsCompleted(index) {
 
     // Visual success effect
     if (state.element) {
-        state.element.style.color = '#a6e3a1';
-        state.element.querySelectorAll('.char').forEach(char => {
-            char.classList.add('correct');
-        });
-
-        // Fade out
-        setTimeout(() => {
-            if (state.element) {
-                state.element.style.opacity = '0';
-            }
-        }, 200);
+        state.element.style.display = 'none';
     }
 
     // Move to next word
@@ -359,10 +357,11 @@ function markWordAsCompleted(index) {
 // --- INPUT HANDLER ---
 document.addEventListener('keydown', function (e) {
     if (!gameActive && !resultsDiv.classList.contains('active')) {
-        // Start game on first keypress
-        if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+        // Start game only on Enter
+        if (e.key === 'Enter') {
             startGame();
         }
+        return;
     }
 
     if (!gameActive || resultsDiv.classList.contains('active')) return;
@@ -375,6 +374,9 @@ document.addEventListener('keydown', function (e) {
     if (currentWordIndex >= words.length) return;
     const currentWord = words[currentWordIndex];
     const state = wordStates[currentWordIndex];
+
+    // Ignore input if the word hasn't appeared on screen yet
+    if (state.y < 0) return;
 
     // Handle backspace
     if (e.key === 'Backspace') {
@@ -515,8 +517,6 @@ function selectDifficulty(level) {
         case 'hard':
             WORD_SPEED = 2.5;
             break;
-        default:
-            WORD_SPEED = 1.5;
     }
 
     // Initialize game with selected difficulty

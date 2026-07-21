@@ -25,7 +25,7 @@
                 <div class="difficulty-name">Fácil</div>
                 <div class="difficulty-desc">La bomba avanza lento. Ideal para principiantes que están aprendiendo a
                     ubicar las teclas.</div>
-                <div class="difficulty-speed">💣 2s por letra</div>
+                <div class="difficulty-speed">💣 Velocidad: 1.0</div>
             </div>
 
             <div class="difficulty-card medium" onclick="selectDifficulty('medium')">
@@ -33,7 +33,7 @@
                 <div class="difficulty-name">Medio</div>
                 <div class="difficulty-desc">Velocidad moderada. Para quienes ya conocen el teclado y quieren mejorar su
                     ritmo.</div>
-                <div class="difficulty-speed">💣 1.3s por letra</div>
+                <div class="difficulty-speed">💣 Velocidad: 1.5</div>
             </div>
 
             <div class="difficulty-card hard" onclick="selectDifficulty('hard')">
@@ -41,7 +41,7 @@
                 <div class="difficulty-name">Difícil</div>
                 <div class="difficulty-desc">La bomba es implacable. Solo para expertos con reflejos rápidos y dedos
                     ágiles.</div>
-                <div class="difficulty-speed">💣 0.8s por letra</div>
+                <div class="difficulty-speed">💣 Velocidad: 2.5</div>
             </div>
         </div>
     </div>
@@ -78,10 +78,11 @@
         </div>
 
         <!-- Zona de escritura -->
-        <span class="start-hint" id="startHint">Empieza a escribir...</span>
         <div class="text-display" id="textDisplay" tabindex="0">
             <!-- Words will be dynamically inserted here -->
         </div>
+
+        <span class="start-hint" id="startHint">Presiona Enter para iniciar...</span>
 
         <!-- Resultados -->
         <div class="results" id="results">
