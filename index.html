@@ -52,10 +52,41 @@
             </div>
             <span class="lang-label" id="langEn">English</span>
         </div>
+
+        <!-- View Stats Button -->
+        <button class="view-stats-btn" onclick="showStatsDashboard()">
+            📊 Ver Estadísticas
+        </button>
     </div>
 
     <!-- JUEGO -->
     <div class="container" id="gameContainer" style="display:none;">
+        <!-- Combo Display -->
+        <div class="combo-display" id="comboDisplay">
+            <div class="combo-counter">
+                <div class="combo-value" id="comboValue">0</div>
+                <div class="combo-label">COMBO</div>
+            </div>
+            <div class="multiplier">
+                <div class="multiplier-value" id="multiplierValue">1x</div>
+            </div>
+        </div>
+
+        <!-- Multiplier Display -->
+        <div class="multiplier-display" id="multiplierDisplay">
+            <div class="multiplier-label">MULTIPLIER</div>
+        </div>
+
+        <!-- Achievement Notification -->
+        <div class="achievement-notification" id="achievementNotification" style="display:none;">
+            <div class="achievement-icon" id="achievementIcon">🏆</div>
+            <div class="achievement-text" id="achievementText"></div>
+        </div>
+
+        <!-- Canvas for Effects -->
+        <canvas id="effectsCanvas" width="1200" height="800"
+            style="position:absolute;top:0;left:0;pointer-events:none;z-index:1;"></canvas>
+
         <!-- Stats en vivo -->
         <div class="stats-bar" id="statsBar">
             <div class="stat-item">
@@ -92,6 +123,11 @@
 
         <span class="start-hint" id="startHint">Presiona Enter para iniciar...</span>
 
+        <!-- Visual Keyboard -->
+        <div class="visual-keyboard" id="visualKeyboard">
+            <!-- Keyboard rows will be dynamically generated -->
+        </div>
+
         <!-- Resultados -->
         <div class="results" id="results">
             <div class="results-grid">
@@ -111,6 +147,10 @@
                     <div class="value" id="resultMissed">0</div>
                     <div class="label">Perdidas</div>
                 </div>
+                <div class="result-card">
+                    <div class="value" id="resultCombo">0</div>
+                    <div class="label">Mejor Combo</div>
+                </div>
             </div>
             <button class="restart-btn" onclick="restartGame()">Reiniciar</button>
         </div>
@@ -118,6 +158,69 @@
         <button class="back-to-menu-btn" onclick="goToMenu()">← Regresar</button>
     </div>
 
+    <!-- Statistics Dashboard -->
+    <div class="stats-dashboard" id="statsDashboard" style="display: none;">
+        <div class="dashboard-header">
+            <h2>📊 Estadísticas</h2>
+            <button class="back-btn" onclick="closeStatsDashboard()">✕</button>
+        </div>
+
+        <!-- Overall Statistics Cards -->
+        <div class="overall-stats">
+            <div class="stat-card">
+                <div class="stat-icon">📝</div>
+                <div class="stat-value" id="dashTotalWords">0</div>
+                <div class="stat-label">Palabras totales</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⏱️</div>
+                <div class="stat-value" id="dashTotalTime">0</div>
+                <div class="stat-label">Tiempo (min)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⚡</div>
+                <div class="stat-value" id="dashBestWpm">0</div>
+                <div class="stat-label">Mejor WPM</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🔥</div>
+                <div class="stat-value" id="dashBestCombo">0</div>
+                <div class="stat-label">Mejor Combo</div>
+            </div>
+        </div>
+
+        <!-- Historical Accuracy Chart -->
+        <div class="chart-section">
+            <h3>📈 Precisión Histórica</h3>
+            <div class="chart-container">
+                <canvas id="accuracyChart" width="800" height="300"></canvas>
+            </div>
+        </div>
+
+        <!-- Keyboard Heatmap -->
+        <div class="heatmap-section">
+            <h3>🔥 Teclas Problemáticas</h3>
+            <div class="heatmap-container" id="keyboardHeatmap">
+                <!-- Heatmap will be rendered here -->
+            </div>
+            <div class="problematic-keys-list" id="problematicKeysList">
+                <!-- Top 10 problematic keys will be listed here -->
+            </div>
+        </div>
+
+        <!-- Top Difficult Words -->
+        <div class="difficult-words-section">
+            <h3>😰 Palabras Más Difíciles</h3>
+            <div class="difficult-words-list" id="difficultWordsList">
+                <!-- Top 5 difficult words will be listed here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="lib/Tone.js"></script>
+    <script src="audioEngine.js"></script>
+    <script src="keyboardVisualizer.js"></script>
+    <script src="statsTracker.js"></script>
     <script src="script.js"></script>
 </body>
 

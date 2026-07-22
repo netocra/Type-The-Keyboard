@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stats Tracker Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #1e1e2e;
+            color: #cdd6f4;
+        }
+        button {
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background: #89b4fa;
+            color: #1e1e2e;
+            border: none;
+            border-radius: 8px;
+        }
+        button:hover {
+            background: #74c7ec;
+        }
+        .output {
+            background: #313244;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .success {
+            color: #a6e3a1;
+        }
+        .error {
+            color: #f38ba8;
+        }
+    </style>
+</head>
+<body>
+    <h1>StatsTracker Test Suite</h1>
+    
+    <div>
+        <button onclick="testInitialize()">1. Initialize StatsTracker</button>
+        <button onclick="testStartSession()">2. Start Session</button>
+        <button onclick="testTrackErrors()">3. Track Errors</button>
+        <button onclick="testTrackWords()">4. Track Words</button>
+        <button onclick="testSaveSession()">5. Save Session</button>
+        <button onclick="testGetAllSessions()">6. Get All Sessions</button>
+        <button onclick="testGetStats()">7. Get Overall Stats</button>
+        <button onclick="testGetProblematicKeys()">8. Get Problematic Keys</button>
+    </div>
+
+    <div class="output" id="output">Output will appear here...</div>
+
+    <script src="statsTracker.js"></script>
+    <script>
+        let tracker = null;
+        const output = document.getElementById('output');
+
+        function log(message, isError = false) {
+            const timestamp = new Date().toLocaleTimeString();
+            const className = isError ? 'error' : 'success';
+            output.innerHTML += `<span class="${className}">[${timestamp}] ${message}</span>\n`;
+            output.scrollTop = output.scrollHeight;
+        }
+
+        async function testInitialize() {
+            try {
+                log('Initializing StatsTracker...');
+                tracker = new StatsTracker();
+                await tracker.initialize();
+                log('✓ StatsTracker initialized successfully');
+                log(`  - Fallback mode: ${tracker.fallbackMode}`);
+                log(`  - Is initialized: ${tracker.isInitialized}`);
+            } catch (error) {
+                log(`✗ Initialization failed: ${error.message}`, true);
+            }
+        }
+
+        async function testStartSession() {
+            if (!tracker) {
+                log('✗ Please initialize first', true);
+                return;
+            }
+            try {
+                log('Starting new session...');
+                tracker.startSession();
+                log('✓ Session started');
+                log(`  - Session ID: ${tracker.currentSession.id}`);
+            } catch (error) {
+                log(`✗ Start session failed: ${error.message}`, true);
+            }
+        }
+
+        async function testTrackErrors() {
+            if (!tracker || !tracker.currentSession) {
+                log('✗ Please start a session first', true);
+                return;
+            }
+            try {
+                log('Tracking errors...');
+                tracker.trackKeyError('a');
+                tracker.trackKeyError('s');
+                tracker.trackKeyError('a');
+                tracker.trackWordError('gato');
+                tracker.trackWordError('perro');
+                log('✓ Errors tracked');
+                log(`  - Key errors: ${JSON.stringify([...tracker.keyErrorsThisSession.entries()])}`);
+                log(`  - Word errors: ${JSON.stringify([...tracker.wordErrorsThisSession.entries()])}`);
+            } catch (error) {
+                log(`✗ Track errors failed: ${error.message}`, true);
+            }
+        }
+
+        async function testTrackWords() {
+            if (!tracker || !tracker.currentSession) {
+                log('✗ Please start a session first', true);
+                return;
+            }
+            try {
+                log('Tracking word completions...');
+                const now = Date.now();
+                for (let i = 0; i < 10; i++) {
+                    tracker.trackWordCompleted(now + (i * 500));
+                }
+                log('✓ Words tracked');
+                log(`  - Current WPM: ${tracker.getCurrentWPM()}`);
+                log(`  - WPM samples: ${tracker.wpmSamples.length}`);
+            } catch (error) {
+                log(`✗ Track words failed: ${error.message}`, true);
+            }
+        }
+
+        async function testSaveSession() {
+            if (!tracker || !tracker.currentSession) {
+                log('✗ Please start a session first', true);
+                return;
+            }
+            try {
+                log('Saving session...');
+                const sessionData = {
+                    timestamp: Date.now(),
+                    wpm: 45,
+                    accuracy: 92,
+                    totalWords: 50,
+                    correctWords: 46,
+                    missedWords: 4,
+                    duration: 120,
+                    highestCombo: 25,
+                    difficulty: 'medium',
+                    language: 'es',
+                    sentencesCompleted: 5
+                };
+                await tracker.saveSession(sessionData);
+                log('✓ Session saved successfully');
+            } catch (error) {
+                log(`✗ Save session failed: ${error.message}`, true);
+            }
+        }
+
+        async function testGetAllSessions() {
+            if (!tracker) {
+                log('✗ Please initialize first', true);
+                return;
+            }
+            try {
+                log('Retrieving all sessions...');
+                const sessions = await tracker.getAllSessions();
+                log('✓ Sessions retrieved');
+                log(`  - Total sessions: ${sessions.length}`);
+                sessions.forEach((s, i) => {
+                    log(`  - Session ${i + 1}: WPM=${s.wpm}, Accuracy=${s.accuracy}%, Words=${s.totalWords}`);
+                });
+            } catch (error) {
+                log(`✗ Get sessions failed: ${error.message}`, true);
+            }
+        }
+
+        async function testGetStats() {
+            if (!tracker) {
+                log('✗ Please initialize first', true);
+                return;
+            }
+            try {
+                log('Calculating overall stats...');
+                const stats = await tracker.getOverallStats();
+                log('✓ Stats calculated');
+                log(`  - Total sessions: ${stats.totalSessions}`);
+                log(`  - Total words: ${stats.totalWords}`);
+                log(`  - Total time: ${stats.totalTime}s`);
+                log(`  - Best WPM: ${stats.bestWpm}`);
+                log(`  - Best combo: ${stats.bestCombo}`);
+                log(`  - Average accuracy: ${stats.averageAccuracy}%`);
+            } catch (error) {
+                log(`✗ Get stats failed: ${error.message}`, true);
+            }
+        }
+
+        async function testGetProblematicKeys() {
+            if (!tracker) {
+                log('✗ Please initialize first', true);
+                return;
+            }
+            try {
+                log('Retrieving problematic keys...');
+                const keys = await tracker.getProblematicKeys();
+                log('✓ Problematic keys retrieved');
+                log(`  - Total problematic keys: ${keys.size}`);
+                const sorted = [...keys.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
+                sorted.forEach(([key, count]) => {
+                    log(`  - Key "${key}": ${count} errors`);
+                });
+            } catch (error) {
+                log(`✗ Get problematic keys failed: ${error.message}`, true);
+            }
+        }
+
+        // Auto-initialize on load
+        window.addEventListener('load', () => {
+            log('=== Stats Tracker Test Suite ===');
+            log('Click buttons in order to test functionality');
+        });
+    </script>
+</body>
+</html>

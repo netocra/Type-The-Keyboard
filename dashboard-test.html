@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Test - Type The Keyboard</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="header">
+        <div class="logo">Dashboard Test</div>
+    </div>
+
+    <!-- Statistics Dashboard -->
+    <div class="stats-dashboard" id="statsDashboard" style="display: block;">
+        <div class="dashboard-header">
+            <h2>📊 Estadísticas (Test Mode)</h2>
+            <button class="back-btn" onclick="window.close()">✕</button>
+        </div>
+
+        <!-- Overall Statistics Cards -->
+        <div class="overall-stats">
+            <div class="stat-card">
+                <div class="stat-icon">📝</div>
+                <div class="stat-value" id="dashTotalWords">0</div>
+                <div class="stat-label">Palabras totales</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⏱️</div>
+                <div class="stat-value" id="dashTotalTime">0</div>
+                <div class="stat-label">Tiempo (min)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⚡</div>
+                <div class="stat-value" id="dashBestWpm">0</div>
+                <div class="stat-label">Mejor WPM</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🔥</div>
+                <div class="stat-value" id="dashBestCombo">0</div>
+                <div class="stat-label">Mejor Combo</div>
+            </div>
+        </div>
+
+        <!-- Historical Accuracy Chart -->
+        <div class="chart-section">
+            <h3>📈 Precisión Histórica</h3>
+            <div class="chart-container">
+                <canvas id="accuracyChart" width="800" height="300"></canvas>
+            </div>
+        </div>
+
+        <!-- Keyboard Heatmap -->
+        <div class="heatmap-section">
+            <h3>🔥 Teclas Problemáticas</h3>
+            <div class="heatmap-container" id="keyboardHeatmap"></div>
+            <div class="problematic-keys-list" id="problematicKeysList"></div>
+        </div>
+
+        <!-- Top Difficult Words -->
+        <div class="difficult-words-section">
+            <h3>😰 Palabras Más Difíciles</h3>
+            <div class="difficult-words-list" id="difficultWordsList"></div>
+        </div>
+    </div>
+
+    <script src="statsTracker.js"></script>
+    <script>
+        // Initialize stats tracker
+        const statsTracker = new StatsTracker();
+        
+        // Test function to populate with mock data
+        async function populateWithMockData() {
+            await statsTracker.initialize();
+            
+            // Create mock sessions
+            const mockSessions = [
+                {
+                    timestamp: Date.now() - 86400000 * 5,
+                    wpm: 45,
+                    accuracy: 92,
+                    totalWords: 50,
+                    correctWords: 46,
+                    missedWords: 4,
+                    duration: 180,
+                    highestCombo: 15,
+                    difficulty: 'medium',
+                    language: 'es',
+                    sentencesCompleted: 3,
+                    perfectSentences: 1
+                },
+                {
+                    timestamp: Date.now() - 86400000 * 3,
+                    wpm: 52,
+                    accuracy: 88,
+                    totalWords: 60,
+                    correctWords: 53,
+                    missedWords: 7,
+                    duration: 200,
+                    highestCombo: 22,
+                    difficulty: 'medium',
+                    language: 'es',
+                    sentencesCompleted: 4,
+                    perfectSentences: 2
+                },
+                {
+                    timestamp: Date.now() - 86400000,
+                    wpm: 58,
+                    accuracy: 95,
+                    totalWords: 70,
+                    correctWords: 67,
+                    missedWords: 3,
+                    duration: 220,
+                    highestCombo: 30,
+                    difficulty: 'hard',
+                    language: 'es',
+                    sentencesCompleted: 5,
+                    perfectSentences: 3
+                }
+            ];
+
+            // Save mock sessions
+            for (const session of mockSessions) {
+                // Simulate session tracking
+                statsTracker.startSession();
+                
+                // Add some mock errors
+                statsTracker.trackKeyError('a');
+                statsTracker.trackKeyError('s');
+                statsTracker.trackKeyError('e');
+                statsTracker.trackKeyError('a');
+                statsTracker.trackWordError('gato');
+                statsTracker.trackWordError('perro');
+                statsTracker.trackWordError('casa');
+                
+                await statsTracker.saveSession(session);
+            }
+            
+            console.log('Mock data populated');
+            await loadDashboard();
+        }
+
+        // Load dashboard with data
+        async function loadDashboard() {
+            try {
+                // Get overall stats
+                const overallStats = await statsTracker.getOverallStats();
+                console.log('Overall stats:', overallStats);
+
+                // Update stat cards
+                document.getElementById('dashTotalWords').textContent = overallStats.totalWords || 0;
+                document.getElementById('dashTotalTime').textContent = Math.round((overallStats.totalTime || 0) / 60) || 0;
+                document.getElementById('dashBestWpm').textContent = overallStats.bestWpm || 0;
+                document.getElementById('dashBestCombo').textContent = overallStats.bestCombo || 0;
+
+                // Generate accuracy chart
+                await generateAccuracyChart();
+
+                // Generate keyboard heatmap
+                await generateKeyboardHeatmap();
+
+                // Display top difficult words
+                await displayTopDifficultWords();
+
+                console.log('Dashboard loaded successfully');
+            } catch (error) {
+                console.error('Failed to load dashboard:', error);
+            }
+        }
+
+        // Generate accuracy chart
+        async function generateAccuracyChart() {
+            const canvas = document.getElementById('accuracyChart');
+            const ctx = canvas.getContext('2d');
+            const accuracies = await statsTracker.getHistoricalAccuracy();
+
+            if (accuracies.length === 0) {
+                ctx.fillStyle = '#585b70';
+                ctx.font = '16px "Roboto Mono"';
+                ctx.textAlign = 'center';
+                ctx.fillText('No hay datos históricos disponibles', canvas.width / 2, canvas.height / 2);
+                return;
+            }
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const padding = 40;
+            const chartWidth = canvas.width - padding * 2;
+            const chartHeight = canvas.height - padding * 2;
+
+            // Draw grid
+            ctx.strokeStyle = '#313244';
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= 5; i++) {
+                const y = padding + (chartHeight / 5) * i;
+                ctx.beginPath();
+                ctx.moveTo(padding, y);
+                ctx.lineTo(canvas.width - padding, y);
+                ctx.stroke();
+
+                ctx.fillStyle = '#585b70';
+                ctx.font = '12px "Roboto Mono"';
+                ctx.textAlign = 'right';
+                ctx.fillText(`${100 - i * 20}%`, padding - 10, y + 4);
+            }
+
+            // Draw line
+            ctx.strokeStyle = '#89b4fa';
+            ctx.lineWidth = 3;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = 'rgba(137, 180, 250, 0.5)';
+            ctx.beginPath();
+            
+            accuracies.forEach((accuracy, index) => {
+                const x = padding + (chartWidth / (accuracies.length - 1)) * index;
+                const y = padding + chartHeight - (accuracy / 100) * chartHeight;
+                if (index === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+            
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+
+            // Draw points
+            ctx.fillStyle = '#89b4fa';
+            accuracies.forEach((accuracy, index) => {
+                const x = padding + (chartWidth / (accuracies.length - 1)) * index;
+                const y = padding + chartHeight - (accuracy / 100) * chartHeight;
+                ctx.beginPath();
+                ctx.arc(x, y, 5, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Draw axes
+            ctx.strokeStyle = '#45475a';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(padding, padding);
+            ctx.lineTo(padding, canvas.height - padding);
+            ctx.lineTo(canvas.width - padding, canvas.height - padding);
+            ctx.stroke();
+        }
+
+        // Generate keyboard heatmap
+        async function generateKeyboardHeatmap() {
+            const heatmapContainer = document.getElementById('keyboardHeatmap');
+            const problematicKeysList = document.getElementById('problematicKeysList');
+            const problematicKeys = await statsTracker.getProblematicKeys();
+
+            if (problematicKeys.size === 0) {
+                heatmapContainer.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🎉</div><div class="empty-state-text">¡Sin errores registrados!</div></div>';
+                return;
+            }
+
+            const maxErrors = Math.max(...Array.from(problematicKeys.values()));
+            const keyboardLayout = [
+                ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
+                ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'],
+                ['z', 'x', 'c', 'v', 'b', 'n', 'm']
+            ];
+
+            const heatmapKeyboard = document.createElement('div');
+            heatmapKeyboard.className = 'heatmap-keyboard';
+
+            keyboardLayout.forEach(row => {
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'heatmap-row';
+
+                row.forEach(key => {
+                    const keyDiv = document.createElement('div');
+                    keyDiv.className = 'heatmap-key';
+                    keyDiv.textContent = key;
+
+                    const errorCount = problematicKeys.get(key) || 0;
+                    if (errorCount > 0) {
+                        keyDiv.setAttribute('data-errors', errorCount);
+                        const intensity = errorCount / maxErrors;
+                        const hue = (1 - intensity) * 120;
+                        keyDiv.style.backgroundColor = `hsl(${hue}, 70%, 40%)`;
+                        keyDiv.style.color = '#1e1e2e';
+                    }
+
+                    rowDiv.appendChild(keyDiv);
+                });
+
+                heatmapKeyboard.appendChild(rowDiv);
+            });
+
+            heatmapContainer.innerHTML = '';
+            heatmapContainer.appendChild(heatmapKeyboard);
+
+            // Top 10 keys
+            const sortedKeys = Array.from(problematicKeys.entries())
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 10);
+
+            problematicKeysList.innerHTML = '';
+            sortedKeys.forEach(([key, count]) => {
+                const keyItem = document.createElement('div');
+                keyItem.className = 'problematic-key-item';
+                keyItem.innerHTML = `
+                    <div class="problematic-key-char">${key}</div>
+                    <div>
+                        <div class="problematic-key-count">${count}</div>
+                        <div class="problematic-key-label">errores</div>
+                    </div>
+                `;
+                problematicKeysList.appendChild(keyItem);
+            });
+        }
+
+        // Display top difficult words
+        async function displayTopDifficultWords() {
+            const difficultWordsList = document.getElementById('difficultWordsList');
+            const topWords = await statsTracker.getTopDifficultWords();
+
+            if (topWords.length === 0) {
+                difficultWordsList.innerHTML = '<div class="empty-state"><div class="empty-state-icon">✨</div><div class="empty-state-text">¡Sin palabras difíciles!</div></div>';
+                return;
+            }
+
+            difficultWordsList.innerHTML = '';
+            topWords.forEach((item, index) => {
+                const wordItem = document.createElement('div');
+                wordItem.className = 'difficult-word-item';
+                wordItem.innerHTML = `
+                    <div class="difficult-word-rank">#${index + 1}</div>
+                    <div class="difficult-word-text">${item.word}</div>
+                    <div class="difficult-word-errors">
+                        <div class="difficult-word-count">${item.errors}</div>
+                        <div class="difficult-word-label">intentos</div>
+                    </div>
+                `;
+                difficultWordsList.appendChild(wordItem);
+            });
+        }
+
+        // Initialize on load
+        window.addEventListener('load', () => {
+            console.log('Dashboard test loaded');
+            populateWithMockData();
+        });
+    </script>
+</body>
+</html>

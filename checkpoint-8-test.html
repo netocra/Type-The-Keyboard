@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkpoint 8 - Analytics Verification</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+        }
+        .test-section {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+        .test-section h2 {
+            color: #ffd700;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+        }
+        .test-item {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #4CAF50;
+        }
+        .test-item.pending {
+            border-left-color: #FFC107;
+        }
+        .test-item.failed {
+            border-left-color: #f44336;
+        }
+        .test-item h3 {
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+        .test-item p {
+            margin-bottom: 5px;
+            opacity: 0.9;
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+        .status.pass {
+            background: #4CAF50;
+        }
+        .status.pending {
+            background: #FFC107;
+            color: #000;
+        }
+        .status.fail {
+            background: #f44336;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            margin: 10px 5px;
+            transition: all 0.3s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        button.secondary {
+            background: #2196F3;
+        }
+        button.danger {
+            background: #f44336;
+        }
+        .results {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+        }
+        .code-output {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 Checkpoint 8: Analytics Working</h1>
+        
+        <div class="test-section">
+            <h2>📋 Verification Checklist</h2>
+            
+            <div class="test-item" id="test1">
+                <h3>1. IndexedDB Initialization <span class="status pending" id="status1">PENDING</span></h3>
+                <p>Verify that IndexedDB is properly initialized and stores are created</p>
+                <div class="results" id="result1" style="display:none;"></div>
+            </div>
+
+            <div class="test-item" id="test2">
+                <h3>2. Session Data Persistence <span class="status pending" id="status2">PENDING</span></h3>
+                <p>Verify that session data can be saved and retrieved from IndexedDB</p>
+                <div class="results" id="result2" style="display:none;"></div>
+            </div>
+
+            <div class="test-item" id="test3">
+                <h3>3. Stats Dashboard Display <span class="status pending" id="status3">PENDING</span></h3>
+                <p>Verify that the dashboard displays overall statistics correctly</p>
+                <div class="results" id="result3" style="display:none;"></div>
+            </div>
+
+            <div class="test-item" id="test4">
+                <h3>4. Accuracy Chart Rendering <span class="status pending" id="status4">PENDING</span></h3>
+                <p>Verify that the historical accuracy chart is rendered on canvas</p>
+                <div class="results" id="result4" style="display:none;"></div>
+            </div>
+
+            <div class="test-item" id="test5">
+                <h3>5. Keyboard Heatmap <span class="status pending" id="status5">PENDING</span></h3>
+                <p>Verify that the keyboard heatmap displays problematic keys</p>
+                <div class="results" id="result5" style="display:none;"></div>
+            </div>
+
+            <div class="test-item" id="test6">
+                <h3>6. Difficult Words List <span class="status pending" id="status6">PENDING</span></h3>
+                <p>Verify that top 5 difficult words are displayed</p>
+                <div class="results" id="result6" style="display:none;"></div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🔧 Test Actions</h2>
+            <button onclick="runAllTests()">▶️ Run All Tests</button>
+            <button class="secondary" onclick="populateMockData()">📊 Populate Mock Data</button>
+            <button class="secondary" onclick="openDashboard()">📈 Open Dashboard</button>
+            <button class="danger" onclick="clearDatabase()">🗑️ Clear Database</button>
+        </div>
+
+        <div class="test-section" id="consoleLogs" style="display:none;">
+            <h2>📜 Console Output</h2>
+            <div class="code-output" id="consoleOutput"></div>
+        </div>
+    </div>
+
+    <script src="statsTracker.js"></script>
+    <script>
+        let statsTracker = null;
+        const consoleOutput = document.getElementById('consoleOutput');
+        const consoleLogs = document.getElementById('consoleLogs');
+
+        // Capture console logs
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+
+        function addLog(type, ...args) {
+            const message = args.map(arg => 
+                typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+            ).join(' ');
+            
+            consoleOutput.textContent += `[${type}] ${message}\n`;
+            consoleLogs.style.display = 'block';
+
+            // Call original
+            if (type === 'LOG') originalLog(...args);
+            else if (type === 'ERROR') originalError(...args);
+            else if (type === 'WARN') originalWarn(...args);
+        }
+
+        console.log = (...args) => addLog('LOG', ...args);
+        console.error = (...args) => addLog('ERROR', ...args);
+        console.warn = (...args) => addLog('WARN', ...args);
+
+        // Update test status
+        function updateTestStatus(testNum, status, message, data = null) {
+            const statusEl = document.getElementById(`status${testNum}`);
+            const resultEl = document.getElementById(`result${testNum}`);
+            const testEl = document.getElementById(`test${testNum}`);
+
+            statusEl.className = `status ${status}`;
+            statusEl.textContent = status.toUpperCase();
+
+            if (status === 'pass') {
+                testEl.classList.remove('pending', 'failed');
+                testEl.style.borderLeftColor = '#4CAF50';
+            } else if (status === 'fail') {
+                testEl.classList.add('failed');
+                testEl.classList.remove('pending');
+            }
+
+            if (message) {
+                resultEl.style.display = 'block';
+                resultEl.innerHTML = `<p>${message}</p>`;
+                
+                if (data) {
+                    resultEl.innerHTML += `<div class="code-output">${JSON.stringify(data, null, 2)}</div>`;
+                }
+            }
+        }
+
+        // Test 1: IndexedDB Initialization
+        async function test1_indexedDBInit() {
+            try {
+                statsTracker = new StatsTracker();
+                await statsTracker.initialize();
+
+                if (statsTracker.isInitialized) {
+                    const mode = statsTracker.fallbackMode ? 'fallback (in-memory)' : 'IndexedDB';
+                    updateTestStatus(1, 'pass', `✅ StatsTracker initialized successfully in ${mode} mode`);
+                    return true;
+                } else {
+                    updateTestStatus(1, 'fail', '❌ StatsTracker failed to initialize');
+                    return false;
+                }
+            } catch (error) {
+                updateTestStatus(1, 'fail', `❌ Error: ${error.message}`, { error: error.toString() });
+                return false;
+            }
+        }
+
+        // Test 2: Session Data Persistence
+        async function test2_sessionPersistence() {
+            try {
+                if (!statsTracker || !statsTracker.isInitialized) {
+                    updateTestStatus(2, 'fail', '❌ StatsTracker not initialized');
+                    return false;
+                }
+
+                // Start a session
+                statsTracker.startSession();
+
+                // Track some data
+                statsTracker.trackKeyError('a');
+                statsTracker.trackKeyError('s');
+                statsTracker.trackWordError('test');
+                statsTracker.trackWordCompleted(Date.now());
+
+                // Save session
+                const testSession = {
+                    timestamp: Date.now(),
+                    wpm: 45,
+                    accuracy: 92,
+                    totalWords: 50,
+                    correctWords: 46,
+                    missedWords: 4,
+                    duration: 180,
+                    highestCombo: 15,
+                    difficulty: 'medium',
+                    language: 'es',
+                    sentencesCompleted: 3
+                };
+
+                await statsTracker.saveSession(testSession);
+
+                // Retrieve sessions
+                const sessions = await statsTracker.getAllSessions();
+                
+                if (sessions.length > 0) {
+                    updateTestStatus(2, 'pass', `✅ Session saved successfully. Total sessions: ${sessions.length}`, { latestSession: sessions[sessions.length - 1] });
+                    return true;
+                } else {
+                    updateTestStatus(2, 'fail', '❌ No sessions found after save');
+                    return false;
+                }
+            } catch (error) {
+                updateTestStatus(2, 'fail', `❌ Error: ${error.message}`, { error: error.toString() });
+                return false;
+            }
+        }
+
+        // Test 3: Stats Dashboard Display
+        async function test3_dashboardStats() {
+            try {
+                if (!statsTracker || !statsTracker.isInitialized) {
+                    updateTestStatus(3, 'fail', '❌ StatsTracker not initialized');
+                    return false;
+                }
+
+                const overallStats = await statsTracker.getOverallStats();
+                
+                if (overallStats && typeof overallStats === 'object') {
+                    updateTestStatus(3, 'pass', `✅ Overall stats retrieved successfully`, overallStats);
+                    return true;
+                } else {
+                    updateTestStatus(3, 'fail', '❌ Failed to retrieve overall stats');
+                    return false;
+                }
+            } catch (error) {
+                updateTestStatus(3, 'fail', `❌ Error: ${error.message}`, { error: error.toString() });
+                return false;
+            }
+        }
+
+        // Test 4: Accuracy Chart
+        async function test4_accuracyChart() {
+            try {
+                if (!statsTracker || !statsTracker.isInitialized) {
+                    updateTestStatus(4, 'fail', '❌ StatsTracker not initialized');
+                    return false;
+                }
+
+                const accuracies = await statsTracker.getHistoricalAccuracy();
+                
+                if (Array.isArray(accuracies)) {
+                    updateTestStatus(4, 'pass', `✅ Historical accuracy data retrieved. ${accuracies.length} data points`, { accuracies });
+                    return true;
+                } else {
+                    updateTestStatus(4, 'fail', '❌ Failed to retrieve accuracy data');
+                    return false;
+                }
+            } catch (error) {
+                updateTestStatus(4, 'fail', `❌ Error: ${error.message}`, { error: error.toString() });
+                return false;
+            }
+        }
+
+        // Test 5: Keyboard Heatmap
+        async function test5_keyboardHeatmap() {
+            try {
+                if (!statsTracker || !statsTracker.isInitialized) {
+                    updateTestStatus(5, 'fail', '❌ StatsTracker not initialized');
+                    return false;
+                }
+
+                const problematicKeys = await statsTracker.getProblematicKeys();
+                
+                if (problematicKeys instanceof Map) {
+                    const keysArray = Array.from(problematicKeys.entries());
+                    updateTestStatus(5, 'pass', `✅ Problematic keys retrieved. ${keysArray.length} keys tracked`, { keys: keysArray });
+                    return true;
+                } else {
+                    updateTestStatus(5, 'fail', '❌ Failed to retrieve problematic keys');
+                    return false;
+                }
+            } catch (error) {
+                updateTestStatus(5, 'fail', `❌ Error: ${error.message}`, { error: error.toString() });
+                return false;
+            }
+        }
+
+        // Test 6: Difficult Words
+        async function test6_difficultWords() {
+            try {
+                if (!statsTracker || !statsTracker.isInitialized) {
+                    updateTestStatus(6, 'fail', '❌ StatsTracker not initialized');
+                    return false;
+                }
+
+                const topWords = await statsTracker.getTopDifficultWords();
+                
+                if (Array.isArray(topWords)) {
+                    updateTestStatus(6, 'pass', `✅ Top difficult words retrieved. ${topWords.length} words`, { words: topWords });
+                    return true;
+                } else {
+                    updateTestStatus(6, 'fail', '❌ Failed to retrieve difficult words');
+                    return false;
+                }
+            } catch (error) {
+                updateTestStatus(6, 'fail', `❌ Error: ${error.message}`, { error: error.toString() });
+                return false;
+            }
+        }
+
+        // Run all tests
+        async function runAllTests() {
+            consoleOutput.textContent = ''; // Clear logs
+            console.log('=== Starting Checkpoint 8 Tests ===');
+            
+            const test1Result = await test1_indexedDBInit();
+            if (test1Result) {
+                await test2_sessionPersistence();
+                await test3_dashboardStats();
+                await test4_accuracyChart();
+                await test5_keyboardHeatmap();
+                await test6_difficultWords();
+            }
+            
+            console.log('=== Tests Complete ===');
+        }
+
+        // Populate mock data
+        async function populateMockData() {
+            try {
+                if (!statsTracker) {
+                    statsTracker = new StatsTracker();
+                    await statsTracker.initialize();
+                }
+
+                const mockSessions = [
+                    { timestamp: Date.now() - 86400000 * 5, wpm: 45, accuracy: 92, totalWords: 50, correctWords: 46, missedWords: 4, duration: 180, highestCombo: 15, difficulty: 'medium', language: 'es', sentencesCompleted: 3 },
+                    { timestamp: Date.now() - 86400000 * 3, wpm: 52, accuracy: 88, totalWords: 60, correctWords: 53, missedWords: 7, duration: 200, highestCombo: 22, difficulty: 'medium', language: 'es', sentencesCompleted: 4 },
+                    { timestamp: Date.now() - 86400000, wpm: 58, accuracy: 95, totalWords: 70, correctWords: 67, missedWords: 3, duration: 220, highestCombo: 30, difficulty: 'hard', language: 'es', sentencesCompleted: 5 }
+                ];
+
+                for (const session of mockSessions) {
+                    statsTracker.startSession();
+                    statsTracker.trackKeyError('a');
+                    statsTracker.trackKeyError('s');
+                    statsTracker.trackKeyError('e');
+                    statsTracker.trackKeyError('a');
+                    statsTracker.trackWordError('gato');
+                    statsTracker.trackWordError('perro');
+                    statsTracker.trackWordError('casa');
+                    await statsTracker.saveSession(session);
+                }
+
+                alert('✅ Mock data populated successfully! Run tests again to see results.');
+                await runAllTests();
+            } catch (error) {
+                alert('❌ Failed to populate mock data: ' + error.message);
+                console.error(error);
+            }
+        }
+
+        // Open dashboard
+        function openDashboard() {
+            window.open('dashboard-test.html', '_blank');
+        }
+
+        // Clear database
+        async function clearDatabase() {
+            if (confirm('⚠️ This will delete all session data. Are you sure?')) {
+                try {
+                    const request = indexedDB.deleteDatabase('TypeKeyboardDB');
+                    request.onsuccess = () => {
+                        alert('✅ Database cleared successfully!');
+                        location.reload();
+                    };
+                    request.onerror = () => {
+                        alert('❌ Failed to clear database');
+                    };
+                } catch (error) {
+                    alert('❌ Error: ' + error.message);
+                }
+            }
+        }
+
+        // Auto-run tests on load
+        window.addEventListener('load', () => {
+            console.log('Checkpoint 8 Test Page Loaded');
+        });
+    </script>
+</body>
+</html>

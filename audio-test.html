@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Engine Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1e1e2e;
+            color: #cdd6f4;
+        }
+        button {
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background: #89b4fa;
+            color: #1e1e2e;
+            border: none;
+            border-radius: 8px;
+        }
+        button:hover {
+            background: #74c7ec;
+        }
+        #status {
+            margin: 20px 0;
+            padding: 10px;
+            background: #313244;
+            border-radius: 8px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: #313244;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>AudioEngine Test</h1>
+    
+    <div id="status">Status: Not initialized</div>
+    
+    <div class="test-section">
+        <h2>1. Initialization</h2>
+        <button onclick="initAudio()">Initialize Audio Engine</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>2. Sound Effects</h2>
+        <button onclick="testCorrectNote()">Play Correct Note</button>
+        <button onclick="testErrorSound()">Play Error Sound</button>
+        <button onclick="testSentenceComplete()">Play Sentence Complete</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>3. Layer Management</h2>
+        <button onclick="testLayers(0)">Combo 0-5 (Beat Only)</button>
+        <button onclick="testLayers(10)">Combo 6-15 (Beat + Bass + Percussion)</button>
+        <button onclick="testLayers(20)">Combo 16+ (Melody + Bass + Perc + Rhythm)</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>4. Control</h2>
+        <button onclick="stopAudio()">Stop All Audio</button>
+    </div>
+
+    <script src="lib/Tone.js"></script>
+    <script src="audioEngine.js"></script>
+    <script>
+        let audioEngine = null;
+        const statusDiv = document.getElementById('status');
+        
+        function updateStatus(message) {
+            statusDiv.textContent = 'Status: ' + message;
+            console.log(message);
+        }
+        
+        async function initAudio() {
+            try {
+                if (!audioEngine) {
+                    audioEngine = new AudioEngine();
+                }
+                
+                updateStatus('Initializing...');
+                const success = await audioEngine.initialize();
+                
+                if (success) {
+                    updateStatus('Audio engine initialized successfully! ✓');
+                } else {
+                    updateStatus('Audio initialization failed ✗');
+                }
+            } catch (error) {
+                updateStatus('Error: ' + error.message);
+                console.error(error);
+            }
+        }
+        
+        function testCorrectNote() {
+            if (!audioEngine || !audioEngine.isInitialized) {
+                updateStatus('Please initialize audio first!');
+                return;
+            }
+            audioEngine.playCorrectNote(5);
+            updateStatus('Playing correct note');
+        }
+        
+        function testErrorSound() {
+            if (!audioEngine || !audioEngine.isInitialized) {
+                updateStatus('Please initialize audio first!');
+                return;
+            }
+            audioEngine.playErrorSound();
+            updateStatus('Playing error sound');
+        }
+        
+        function testSentenceComplete() {
+            if (!audioEngine || !audioEngine.isInitialized) {
+                updateStatus('Please initialize audio first!');
+                return;
+            }
+            audioEngine.playSentenceComplete();
+            updateStatus('Playing sentence complete chord progression');
+        }
+        
+        function testLayers(combo) {
+            if (!audioEngine || !audioEngine.isInitialized) {
+                updateStatus('Please initialize audio first!');
+                return;
+            }
+            audioEngine.updateLayers(combo);
+            const layers = audioEngine.determineActiveLayers(combo);
+            updateStatus(`Updated layers for combo ${combo}: ${layers.join(', ')}`);
+        }
+        
+        function stopAudio() {
+            if (!audioEngine || !audioEngine.isInitialized) {
+                updateStatus('Audio not initialized');
+                return;
+            }
+            audioEngine.stopAll();
+            updateStatus('All audio stopped');
+        }
+    </script>
+</body>
+</html>
