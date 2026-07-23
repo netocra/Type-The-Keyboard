@@ -116,16 +116,22 @@
             <!-- Palabras completadas aparecerán aquí -->
         </div>
 
-        <!-- Zona de escritura -->
-        <div class="text-display" id="textDisplay" tabindex="0">
-            <!-- Words will be dynamically inserted here -->
+        <!-- Zona de juego: palabras + teclado lado a lado -->
+        <div class="game-area">
+            <!-- Zona de escritura -->
+            <div class="text-display" id="textDisplay" tabindex="0">
+                <!-- Words will be dynamically inserted here -->
+            </div>
+
+            <!-- Visual Keyboard -->
+            <div class="visual-keyboard" id="visualKeyboard">
+                <!-- Keyboard rows will be dynamically generated -->
+            </div>
         </div>
 
-        <span class="start-hint" id="startHint">Presiona Enter para iniciar...</span>
-
-        <!-- Visual Keyboard -->
-        <div class="visual-keyboard" id="visualKeyboard">
-            <!-- Keyboard rows will be dynamically generated -->
+        <div class="hint-row">
+            <span class="start-hint" id="startHint">Presiona Enter para iniciar...</span>
+            <button class="back-to-menu-btn" onclick="goToMenu()">← Regresar</button>
         </div>
 
         <!-- Resultados -->
@@ -154,8 +160,6 @@
             </div>
             <button class="restart-btn" onclick="restartGame()">Reiniciar</button>
         </div>
-
-        <button class="back-to-menu-btn" onclick="goToMenu()">← Regresar</button>
     </div>
 
     <!-- Statistics Dashboard -->

@@ -1,13 +1,109 @@
 // --- GUITAR HERO STYLE WITH SENTENCE ACCUMULATION ---
 
 // --- BANCO DE ORACIONES ---
-const sentenceBank = [
+// Fallback local en caso de que la API no esté disponible
+const FALLBACK_SENTENCES = [
     "el gato negro salta sobre el muro alto",
     "la luna brilla en el cielo nocturno estrellado",
     "los ninos juegan felices en el parque verde",
     "el viento sopla fuerte entre los arboles altos",
     "la musica suena alegre durante toda la noche"
 ];
+
+// URL de la API de palabras en español
+const SENTENCES_API_URL = 'https://random-word-api.herokuapp.com/word';
+
+/**
+ * Verifica si una palabra parece ser español válido para el juego.
+ * Filtra palabras en inglés, con mayúsculas raras, espacios, acentos o caracteres no válidos.
+ */
+function isValidSpanishWord(word) {
+    // Rechazar palabras vacías o muy cortas
+    if (!word || word.length < 2) return false;
+    // Rechazar palabras con espacios (frases compuestas)
+    if (word.includes(' ')) return false;
+    // Rechazar palabras que empiezan con mayúscula (nombres propios / inglés)
+    if (word[0] !== word[0].toLowerCase()) return false;
+    // Solo aceptar letras sin acento (a-z, ñ) — sin tildes para facilitar la escritura
+    if (!/^[a-zñ]+$/.test(word)) return false;
+    // Rechazar palabras con patrones típicos del inglés
+    if (/th|sh|wh|ck|ght|ph|ow|aw|ew|wn|wr|kn|oo|ee|tt|ll$/.test(word)) return false;
+    // Rechazar terminaciones comunes del inglés
+    if (/ing$|tion$|ness$|ment$|ful$|less$|ous$|ive$|ble$|ly$|er$|ed$|ght$|tch$/.test(word)) return false;
+    // Rechazar palabras que empiecen con combinaciones raras en español
+    if (/^(wh|th|sh|ph|kn|wr|tw|sw|sc|sk|sl|sm|sn|sp|st|str|spr)/.test(word)) return false;
+    return true;
+}
+
+/**
+ * Carga palabras en español desde la API externa y las agrupa en oraciones.
+ * Si la API falla, usa el fallback local.
+ * @param {string} language - Idioma (reservado para futuro uso)
+ * @param {string} difficulty - Dificultad ('easy', 'medium', 'hard')
+ * @returns {Promise<string[]>} Array de oraciones
+ */
+async function fetchSentences(language = 'es', difficulty = 'medium') {
+    if (!SENTENCES_API_URL) {
+        console.log('API no configurada, usando oraciones de fallback');
+        return FALLBACK_SENTENCES;
+    }
+
+    // Determinar cantidad de palabras según dificultad
+    const wordsPerSentence = 5;
+    const sentenceCount = difficulty === 'easy' ? 3 : difficulty === 'hard' ? 6 : 5;
+    const totalWords = wordsPerSentence * sentenceCount;
+
+    // Pedir más palabras de las necesarias para compensar las que se filtren
+    const requestCount = totalWords * 3;
+
+    try {
+        const response = await fetch(`${SENTENCES_API_URL}?lang=es&number=${requestCount}`);
+
+        if (!response.ok) {
+            throw new Error(`API respondió con status ${response.status}`);
+        }
+
+        const words = await response.json();
+
+        if (!Array.isArray(words) || words.length === 0) {
+            throw new Error('Formato de respuesta inválido o sin palabras');
+        }
+
+        // Filtrar: solo palabras válidas en español
+        const cleanWords = words
+            .map(w => w.toLowerCase().trim())
+            .filter(isValidSpanishWord)
+            .slice(0, totalWords);
+
+        if (cleanWords.length < wordsPerSentence) {
+            throw new Error(`Solo se obtuvieron ${cleanWords.length} palabras válidas en español`);
+        }
+
+        // Agrupar palabras en oraciones
+        const sentences = [];
+        for (let i = 0; i < cleanWords.length; i += wordsPerSentence) {
+            const chunk = cleanWords.slice(i, i + wordsPerSentence);
+            if (chunk.length === wordsPerSentence) {
+                sentences.push(chunk.join(' '));
+            }
+        }
+
+        if (sentences.length === 0) {
+            throw new Error('No se pudieron formar oraciones completas');
+        }
+
+        console.log(`Cargadas ${sentences.length} oraciones desde API (${cleanWords.length} palabras en español)`);
+        return sentences;
+
+    } catch (error) {
+        console.warn('Error al cargar palabras desde API:', error.message);
+        console.log('Usando oraciones de fallback');
+        return FALLBACK_SENTENCES;
+    }
+}
+
+// Variable que almacena las oraciones cargadas para la partida actual
+let sentenceBank = [...FALLBACK_SENTENCES];
 
 // --- COMBO MANAGER CLASS ---
 class ComboManager {
@@ -192,7 +288,7 @@ function cleanGameState() {
 }
 
 // --- INITIALIZE GAME ---
-function initGame() {
+async function initGame() {
     // CRITICAL: Clean all previous state first
     cleanGameState();
 
@@ -233,6 +329,9 @@ function initGame() {
     // Hide menu, show game
     if (menuScreen) menuScreen.style.display = 'none';
     if (gameContainer) gameContainer.style.display = '';
+
+    // Cargar oraciones desde la API (o fallback)
+    sentenceBank = await fetchSentences(currentLanguage, currentDifficulty);
 
     // Generate sentences from bank
     const fullText = sentenceBank.join(' ');
@@ -807,9 +906,9 @@ function endGame() {
 }
 
 // --- RESTART GAME ---
-function restartGame() {
+async function restartGame() {
     resultsDiv.classList.remove('active');
-    initGame();
+    await initGame();
 }
 
 // --- GO TO MENU ---
@@ -820,7 +919,7 @@ function goToMenu() {
 }
 
 // --- DIFFICULTY SELECTION ---
-function selectDifficulty(level) {
+async function selectDifficulty(level) {
     currentDifficulty = level;
 
     // Set speed based on difficulty
@@ -837,7 +936,7 @@ function selectDifficulty(level) {
     }
 
     // Initialize game with selected difficulty
-    initGame();
+    await initGame();
 }
 
 // --- FOCUS MANAGEMENT ---
