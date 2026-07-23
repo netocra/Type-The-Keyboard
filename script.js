@@ -10,6 +10,14 @@ const FALLBACK_SENTENCES = [
     "la musica suena alegre durante toda la noche"
 ];
 
+const FALLBACK_SENTENCES_EN = [
+    "the quick brown fox jumps over the lazy dog",
+    "she sells sea shells by the sea shore today",
+    "the rain in spain stays mainly on the plain",
+    "every good boy does fine when playing music notes",
+    "pack my box with five dozen big red jugs"
+];
+
 // URL de la API de palabras en español
 const SENTENCES_API_URL = 'https://random-word-api.herokuapp.com/word';
 
@@ -36,16 +44,34 @@ function isValidSpanishWord(word) {
 }
 
 /**
- * Carga palabras en español desde la API externa y las agrupa en oraciones.
+ * Verifica si una palabra parece ser inglés válido para el juego.
+ * Filtra palabras en español, con acentos, ñ, o caracteres no ingleses.
+ */
+function isValidEnglishWord(word) {
+    // Rechazar palabras vacías o muy cortas
+    if (!word || word.length < 2) return false;
+    // Rechazar palabras con espacios
+    if (word.includes(' ')) return false;
+    // Rechazar palabras que empiezan con mayúscula (nombres propios)
+    if (word[0] !== word[0].toLowerCase()) return false;
+    // Solo aceptar letras inglesas (a-z sin ñ ni acentos)
+    if (!/^[a-z]+$/.test(word)) return false;
+    // Rechazar palabras con ñ o patrones típicos del español
+    if (/ñ|ción|mente$|idad$|ismo$|ista$/.test(word)) return false;
+    return true;
+}
+
+/**
+ * Carga palabras desde la API externa y las agrupa en oraciones.
  * Si la API falla, usa el fallback local.
- * @param {string} language - Idioma (reservado para futuro uso)
+ * @param {string} language - Idioma ('es' o 'en')
  * @param {string} difficulty - Dificultad ('easy', 'medium', 'hard')
  * @returns {Promise<string[]>} Array de oraciones
  */
 async function fetchSentences(language = 'es', difficulty = 'medium') {
     if (!SENTENCES_API_URL) {
         console.log('API no configurada, usando oraciones de fallback');
-        return FALLBACK_SENTENCES;
+        return language === 'en' ? FALLBACK_SENTENCES_EN : FALLBACK_SENTENCES;
     }
 
     // Determinar cantidad de palabras según dificultad
@@ -56,8 +82,13 @@ async function fetchSentences(language = 'es', difficulty = 'medium') {
     // Pedir más palabras de las necesarias para compensar las que se filtren
     const requestCount = totalWords * 3;
 
+    // Seleccionar idioma para la API y filtro correspondiente
+    const apiLang = language === 'en' ? 'en' : 'es';
+    const wordFilter = language === 'en' ? isValidEnglishWord : isValidSpanishWord;
+    const fallback = language === 'en' ? FALLBACK_SENTENCES_EN : FALLBACK_SENTENCES;
+
     try {
-        const response = await fetch(`${SENTENCES_API_URL}?lang=es&number=${requestCount}`);
+        const response = await fetch(`${SENTENCES_API_URL}?lang=${apiLang}&number=${requestCount}`);
 
         if (!response.ok) {
             throw new Error(`API respondió con status ${response.status}`);
@@ -69,14 +100,14 @@ async function fetchSentences(language = 'es', difficulty = 'medium') {
             throw new Error('Formato de respuesta inválido o sin palabras');
         }
 
-        // Filtrar: solo palabras válidas en español
+        // Filtrar: solo palabras válidas del idioma seleccionado
         const cleanWords = words
             .map(w => w.toLowerCase().trim())
-            .filter(isValidSpanishWord)
+            .filter(wordFilter)
             .slice(0, totalWords);
 
         if (cleanWords.length < wordsPerSentence) {
-            throw new Error(`Solo se obtuvieron ${cleanWords.length} palabras válidas en español`);
+            throw new Error(`Solo se obtuvieron ${cleanWords.length} palabras válidas`);
         }
 
         // Agrupar palabras en oraciones
@@ -92,13 +123,13 @@ async function fetchSentences(language = 'es', difficulty = 'medium') {
             throw new Error('No se pudieron formar oraciones completas');
         }
 
-        console.log(`Cargadas ${sentences.length} oraciones desde API (${cleanWords.length} palabras en español)`);
+        console.log(`Cargadas ${sentences.length} oraciones en ${apiLang} desde API (${cleanWords.length} palabras)`);
         return sentences;
 
     } catch (error) {
         console.warn('Error al cargar palabras desde API:', error.message);
         console.log('Usando oraciones de fallback');
-        return FALLBACK_SENTENCES;
+        return fallback;
     }
 }
 
