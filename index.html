@@ -161,11 +161,85 @@
         </div>
     </div>
 
-    <!-- Statistics Dashboard -->
+    <!-- About Game Panel -->
+    <div class="about-dashboard" id="aboutDashboard" style="display: none;">
+        <div class="dashboard-header">
+            <h2>🎮 Acerca del juego</h2>
+            <button class="back-btn" onclick="closeAboutGame()">← Regresar</button>
+        </div>
+
+        <!-- Game Description -->
+        <div class="about-section">
+            <h3>¿Qué es Type The Keyboard?</h3>
+            <p class="about-text">Type The Keyboard es un juego de mecanografía estilo "Guitar Hero" donde las palabras caen desde arriba y debes escribirlas antes de que lleguen al fondo. Mejora tu velocidad y precisión al escribir mientras te diviertes.</p>
+        </div>
+
+        <!-- How to Play -->
+        <div class="about-section">
+            <h3>¿Cómo jugar?</h3>
+            <div class="about-steps">
+                <div class="about-step">
+                    <div class="step-number">1</div>
+                    <div class="step-text">Elige una dificultad: Fácil, Medio o Difícil. Cada una controla la velocidad a la que caen las palabras.</div>
+                </div>
+                <div class="about-step">
+                    <div class="step-number">2</div>
+                    <div class="step-text">Presiona <strong>Enter</strong> para iniciar la partida.</div>
+                </div>
+                <div class="about-step">
+                    <div class="step-number">3</div>
+                    <div class="step-text">Escribe cada palabra antes de que llegue al fondo. Si la completas correctamente, se acumula arriba.</div>
+                </div>
+                <div class="about-step">
+                    <div class="step-number">4</div>
+                    <div class="step-text">Mantén un combo de aciertos para multiplicar tus puntos (hasta 5x).</div>
+                </div>
+                <div class="about-step">
+                    <div class="step-number">5</div>
+                    <div class="step-text">Si te equivocas o la palabra llega al fondo, pierdes el combo y la palabra se marca como perdida.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features -->
+        <div class="about-section">
+            <h3>Características</h3>
+            <div class="about-features">
+                <div class="about-feature-card">
+                    <div class="feature-icon">🎵</div>
+                    <div class="feature-title">Audio dinámico</div>
+                    <div class="feature-desc">La música se enriquece con más capas conforme aumenta tu combo.</div>
+                </div>
+                <div class="about-feature-card">
+                    <div class="feature-icon">⌨️</div>
+                    <div class="feature-title">Teclado visual</div>
+                    <div class="feature-desc">Te muestra qué tecla presionar y con qué dedo, usando colores.</div>
+                </div>
+                <div class="about-feature-card">
+                    <div class="feature-icon">📊</div>
+                    <div class="feature-title">Estadísticas</div>
+                    <div class="feature-desc">Historial de sesiones, teclas problemáticas y palabras difíciles.</div>
+                </div>
+                <div class="about-feature-card">
+                    <div class="feature-icon">🌐</div>
+                    <div class="feature-title">Dos idiomas</div>
+                    <div class="feature-desc">Practica en español o inglés con palabras generadas dinámicamente.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Credits -->
+        <div class="about-section">
+            <h3>Créditos</h3>
+            <p class="about-text">Desarrollado para el Hackathon Código Facilito 2026. Hecho con HTML, CSS, JavaScript y Tone.js.</p>
+        </div>
+    </div>
+
+    <!-- Statistics Dashboard (original) -->
     <div class="stats-dashboard" id="statsDashboard" style="display: none;">
         <div class="dashboard-header">
             <h2><img src="img/img-statistics.png" alt="Estadísticas" class="dashboard-title-icon"> Estadísticas</h2>
-            <button class="back-btn" onclick="closeStatsDashboard()">✕</button>
+            <button class="back-btn" onclick="closeStatsDashboard()">← Regresar</button>
         </div>
 
         <!-- Overall Statistics Cards -->

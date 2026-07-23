@@ -983,8 +983,31 @@ window.addEventListener('load', () => {
 
 // --- ABOUT GAME ---
 function showAboutGame() {
-    // Placeholder - implementar modal o vista de "Acerca del juego"
-    alert('Acerca del juego: Type The Keyboard');
+    const aboutDashboard = document.getElementById('aboutDashboard');
+    const menuScreen = document.getElementById('menuScreen');
+
+    if (!aboutDashboard || !menuScreen) return;
+
+    // Push state so browser back button closes the panel
+    history.pushState({ view: 'about' }, '', '#about');
+
+    menuScreen.style.display = 'none';
+    aboutDashboard.style.display = 'block';
+}
+
+function closeAboutGame() {
+    const aboutDashboard = document.getElementById('aboutDashboard');
+    const menuScreen = document.getElementById('menuScreen');
+
+    if (!aboutDashboard || !menuScreen) return;
+
+    aboutDashboard.style.display = 'none';
+    menuScreen.style.display = '';
+
+    // Go back in history if we pushed a state for about
+    if (history.state && history.state.view === 'about') {
+        history.back();
+    }
 }
 
 // --- HANDLE TAB VISIBILITY FOR AUDIO CONTEXT ---
@@ -1054,22 +1077,32 @@ function closeStatsDashboard() {
     }
 }
 
-// Handle browser back/forward button for stats dashboard
+// Handle browser back/forward button for stats dashboard and about panel
 window.addEventListener('popstate', function (e) {
     const dashboard = document.getElementById('statsDashboard');
+    const aboutDashboard = document.getElementById('aboutDashboard');
     const menuScreen = document.getElementById('menuScreen');
 
-    if (!dashboard || !menuScreen) return;
+    if (!menuScreen) return;
 
-    if (!e.state || e.state.view !== 'stats') {
-        // Going back from stats → close dashboard, show menu
-        dashboard.style.display = 'none';
+    if (!e.state || (!e.state.view)) {
+        // Going back to menu — close any open panel
+        if (dashboard) dashboard.style.display = 'none';
+        if (aboutDashboard) aboutDashboard.style.display = 'none';
         menuScreen.style.display = '';
-    } else if (e.state && e.state.view === 'stats') {
+    } else if (e.state.view === 'stats') {
         // Going forward to stats → show dashboard
+        if (aboutDashboard) aboutDashboard.style.display = 'none';
         menuScreen.style.display = 'none';
-        dashboard.style.display = 'block';
-        loadDashboardStatistics();
+        if (dashboard) {
+            dashboard.style.display = 'block';
+            loadDashboardStatistics();
+        }
+    } else if (e.state.view === 'about') {
+        // Going forward to about → show about panel
+        if (dashboard) dashboard.style.display = 'none';
+        menuScreen.style.display = 'none';
+        if (aboutDashboard) aboutDashboard.style.display = 'block';
     }
 });
 
