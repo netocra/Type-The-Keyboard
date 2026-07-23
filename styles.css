@@ -680,6 +680,42 @@ body {
     text-shadow: 0 0 8px rgba(249, 226, 175, 0.6);
 }
 
+/* Difficulty badges */
+.step-number.difficulty-badge {
+    min-width: 4rem;
+    height: 2.5rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    border-radius: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.step-number.easy-badge {
+    background: rgba(166, 227, 161, 0.1);
+    border: 2px solid #a6e3a1;
+    color: #a6e3a1;
+}
+
+.step-number.medium-badge {
+    background: rgba(249, 226, 175, 0.1);
+    border: 2px solid #f9e2af;
+    color: #f9e2af;
+}
+
+.step-number.hard-badge {
+    background: rgba(243, 139, 168, 0.1);
+    border: 2px solid #f38ba8;
+    color: #f38ba8;
+}
+
+.difficulty-step-icon {
+    width: 3rem;
+    height: 3rem;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
 .step-text {
     font-size: 0.95rem;
     color: #a6adc8;
@@ -1183,7 +1219,7 @@ body {
 
 .chart-section h3 {
     font-size: 1.5rem;
-    color: #cdd6f4;
+    color: #cba6f7;
     margin-bottom: 1.5rem;
     font-weight: 600;
 }
@@ -1203,7 +1239,7 @@ body {
 
 .heatmap-section h3 {
     font-size: 1.5rem;
-    color: #cdd6f4;
+    color: #cba6f7;
     margin-bottom: 1.5rem;
     font-weight: 600;
 }
@@ -1320,7 +1356,7 @@ body {
 
 .difficult-words-section h3 {
     font-size: 1.5rem;
-    color: #cdd6f4;
+    color: #cba6f7;
     margin-bottom: 1.5rem;
     font-weight: 600;
 }

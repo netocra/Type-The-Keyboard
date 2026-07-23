@@ -22,25 +22,22 @@
             <div class="difficulty-card easy" onclick="selectDifficulty('easy')">
                 <div class="difficulty-icon"><img src="img/img-easy.png" alt="Fácil"></div>
                 <div class="difficulty-name">Fácil</div>
-                <div class="difficulty-desc">La bomba avanza lento. Ideal para principiantes que están aprendiendo a
-                    ubicar las teclas.</div>
-                <div class="difficulty-speed">💣 Velocidad: 1.0</div>
+                <div class="difficulty-desc">Las palabras caen lento. Ideal para principiantes. Juego de 15 palabras.</div>
+                <div class="difficulty-speed">💣 Velocidad: 1.0 px/frame</div>
             </div>
 
             <div class="difficulty-card medium" onclick="selectDifficulty('medium')">
                 <div class="difficulty-icon"><img src="img/img-medium.png" alt="Medio"></div>
                 <div class="difficulty-name">Medio</div>
-                <div class="difficulty-desc">Velocidad moderada. Para quienes ya conocen el teclado y quieren mejorar su
-                    ritmo.</div>
-                <div class="difficulty-speed">💣 Velocidad: 1.5</div>
+                <div class="difficulty-desc">Las palabras caen moderadamente. Ideal para conocedores. Juego de 25 palabras.</div>
+                <div class="difficulty-speed">💣 Velocidad: 1.5 px/frame</div>
             </div>
 
             <div class="difficulty-card hard" onclick="selectDifficulty('hard')">
                 <div class="difficulty-icon"><img src="img/img-hard.png" alt="Difícil"></div>
                 <div class="difficulty-name">Difícil</div>
-                <div class="difficulty-desc">La bomba es implacable. Solo para expertos con reflejos rápidos y dedos
-                    ágiles.</div>
-                <div class="difficulty-speed">💣 Velocidad: 2.5</div>
+                <div class="difficulty-desc">Las palabras caen a gran velocidad. Ideal para expertos. Juego de 30 palabras.</div>
+                <div class="difficulty-speed">💣 Velocidad: 2.5 px/frame</div>
             </div>
         </div>
 
@@ -230,6 +227,29 @@
                 <div class="about-step">
                     <div class="step-number glossary-term">pts</div>
                     <div class="step-text"><strong>Puntos</strong> — Se obtienen 10 puntos base por cada palabra completada, multiplicados por tu multiplicador actual. Completar una oración otorga un bono de 100 puntos extra.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Difficulties -->
+        <div class="about-section">
+            <h3>Dificultades</h3>
+            <p class="about-text">Cada dificultad determina la velocidad de caída de las palabras y la cantidad de palabras deduración del juego:</p>
+            <div class="about-steps">
+                <div class="about-step">
+                    <img src="img/img-easy.png" alt="Fácil" class="difficulty-step-icon">
+                    <div class="step-number difficulty-badge easy-badge">Fácil</div>
+                    <div class="step-text"><strong>15 palabras</strong> (3 oraciones × 5 palabras). Velocidad de caída: <strong>1.0 px/frame</strong>. Las palabras bajan 1 píxel por cada cuadro de animación (60 fps), dándote el mayor tiempo posible para escribir.</div>
+                </div>
+                <div class="about-step">
+                    <img src="img/img-medium.png" alt="Medio" class="difficulty-step-icon">
+                    <div class="step-number difficulty-badge medium-badge">Medio</div>
+                    <div class="step-text"><strong>25 palabras</strong> (5 oraciones × 5 palabras). Velocidad de caída: <strong>1.5 px/frame</strong>. Las palabras caen 1.5 veces más rápido que en fácil, exigiendo mayor agilidad.</div>
+                </div>
+                <div class="about-step">
+                    <img src="img/img-hard.png" alt="Difícil" class="difficulty-step-icon">
+                    <div class="step-number difficulty-badge hard-badge">Difícil</div>
+                    <div class="step-text"><strong>30 palabras</strong> (6 oraciones × 5 palabras). Velocidad de caída: <strong>2.5 px/frame</strong>. Las palabras caen 2.5 veces más rápido que en fácil, requiriendo reflejos y precisión de experto.</div>
                 </div>
             </div>
         </div>
