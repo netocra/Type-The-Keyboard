@@ -546,7 +546,9 @@ body {
 }
 
 .difficulty-speed {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
     margin-top: 0.8rem;
     font-size: 0.7rem;
     color: var(--card-color);
@@ -554,6 +556,12 @@ body {
     padding: 0.3rem 0.6rem;
     border-radius: 4px;
     font-weight: 500;
+}
+
+.speed-icon {
+    width: 1rem;
+    height: 1rem;
+    object-fit: contain;
 }
 
 
