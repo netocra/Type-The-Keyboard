@@ -860,11 +860,20 @@ body {
     cursor: pointer;
     transition: all 0.3s;
     box-shadow: 0 4px 15px rgba(137, 180, 250, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
 .view-stats-btn:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(137, 180, 250, 0.5);
+}
+
+.stats-btn-icon {
+    width: 1.4rem;
+    height: 1.4rem;
+    object-fit: contain;
 }
 
 /* Statistics Dashboard */
@@ -906,6 +915,15 @@ body {
     font-size: 2rem;
     color: #89b4fa;
     font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.dashboard-title-icon {
+    width: 2rem;
+    height: 2rem;
+    object-fit: contain;
 }
 
 .dashboard-header .back-btn {
