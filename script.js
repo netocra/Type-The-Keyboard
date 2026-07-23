@@ -988,8 +988,10 @@ function showAboutGame() {
 
     if (!aboutDashboard || !menuScreen) return;
 
-    // Push state so browser back button closes the panel
-    history.pushState({ view: 'about' }, '', '#about');
+    // Only push state if not already on #about
+    if (location.hash !== '#about') {
+        history.pushState({ view: 'about' }, '', '#about');
+    }
 
     menuScreen.style.display = 'none';
     aboutDashboard.style.display = 'block';
@@ -1004,8 +1006,8 @@ function closeAboutGame() {
     aboutDashboard.style.display = 'none';
     menuScreen.style.display = '';
 
-    // Go back in history if we pushed a state for about
-    if (history.state && history.state.view === 'about') {
+    // Go back in history to clean the hash
+    if (location.hash === '#about') {
         history.back();
     }
 }
@@ -1046,7 +1048,9 @@ async function showStatsDashboard() {
     if (!dashboard || !menuScreen) return;
 
     // Push state so browser back button closes the dashboard
-    history.pushState({ view: 'stats' }, '', '#stats');
+    if (location.hash !== '#stats') {
+        history.pushState({ view: 'stats' }, '', '#stats');
+    }
 
     // Hide menu
     menuScreen.style.display = 'none';
@@ -1071,8 +1075,8 @@ function closeStatsDashboard() {
     // Show menu
     menuScreen.style.display = '';
 
-    // Go back in history if we pushed a state for stats
-    if (history.state && history.state.view === 'stats') {
+    // Go back in history to clean the hash
+    if (location.hash === '#stats') {
         history.back();
     }
 }
