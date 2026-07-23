@@ -981,6 +981,12 @@ window.addEventListener('load', () => {
     if (gameContainer) gameContainer.style.display = 'none';
 });
 
+// --- ABOUT GAME ---
+function showAboutGame() {
+    // Placeholder - implementar modal o vista de "Acerca del juego"
+    alert('Acerca del juego: Type The Keyboard');
+}
+
 // --- HANDLE TAB VISIBILITY FOR AUDIO CONTEXT ---
 document.addEventListener('visibilitychange', () => {
     if (audioEngine) {

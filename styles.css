@@ -557,6 +557,24 @@ body {
 }
 
 
+/* Botón Acerca del juego */
+.about-game-btn {
+    background: none;
+    border: none;
+    color: #cba6f7;
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 0;
+    cursor: pointer;
+    margin-left: 0.3rem;
+    transition: opacity 0.2s;
+}
+
+.about-game-btn:hover {
+    opacity: 0.7;
+}
+
 /* Toggle de idioma */
 .language-toggle {
     margin-top: 2rem;
