@@ -1016,6 +1016,9 @@ async function showStatsDashboard() {
 
     if (!dashboard || !menuScreen) return;
 
+    // Push state so browser back button closes the dashboard
+    history.pushState({ view: 'stats' }, '', '#stats');
+
     // Hide menu
     menuScreen.style.display = 'none';
 
@@ -1038,7 +1041,31 @@ function closeStatsDashboard() {
 
     // Show menu
     menuScreen.style.display = '';
+
+    // Go back in history if we pushed a state for stats
+    if (history.state && history.state.view === 'stats') {
+        history.back();
+    }
 }
+
+// Handle browser back/forward button for stats dashboard
+window.addEventListener('popstate', function (e) {
+    const dashboard = document.getElementById('statsDashboard');
+    const menuScreen = document.getElementById('menuScreen');
+
+    if (!dashboard || !menuScreen) return;
+
+    if (!e.state || e.state.view !== 'stats') {
+        // Going back from stats → close dashboard, show menu
+        dashboard.style.display = 'none';
+        menuScreen.style.display = '';
+    } else if (e.state && e.state.view === 'stats') {
+        // Going forward to stats → show dashboard
+        menuScreen.style.display = 'none';
+        dashboard.style.display = 'block';
+        loadDashboardStatistics();
+    }
+});
 
 // Load and display all dashboard statistics
 async function loadDashboardStatistics() {
