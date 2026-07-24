@@ -1,22 +1,48 @@
-// --- GUITAR HERO STYLE WITH SENTENCE ACCUMULATION ---
 
-// --- BANCO DE ORACIONES ---
-// Fallback local en caso de que la API no esté disponible
-const FALLBACK_SENTENCES = [
-    "el gato negro salta sobre el muro alto",
-    "la luna brilla en el cielo nocturno estrellado",
-    "los ninos juegan felices en el parque verde",
-    "el viento sopla fuerte entre los arboles altos",
-    "la musica suena alegre durante toda la noche"
+const FALLBACK_WORDS_ES = [
+    "gato", "mesa", "libro", "casa", "perro", "luna", "sol", "agua", "fuego", "tierra",
+    "mundo", "tiempo", "vida", "mano", "noche", "dia", "hombre", "mujer", "ola", "puerta",
+    "camino", "piedra", "rio", "bosque", "campo", "pluma", "reloj", "cuerpo", "mente", "calle",
+    "barco", "juego", "flor", "viento", "lago", "monte", "playa", "hierba", "nube", "roca",
+    "silla", "techo", "piso", "carro", "muro", "humo", "pasto", "sombra", "forma", "grupo"
 ];
 
-const FALLBACK_SENTENCES_EN = [
-    "the quick brown fox jumps over the lazy dog",
-    "she sells sea shells by the sea shore today",
-    "the rain in spain stays mainly on the plain",
-    "every good boy does fine when playing music notes",
-    "pack my box with five dozen big red jugs"
+const FALLBACK_WORDS_EN = [
+    "house", "water", "light", "world", "stone", "dream", "river", "cloud", "flame", "music",
+    "plant", "chair", "table", "green", "storm", "brain", "clock", "dance", "earth", "glass",
+    "heart", "knife", "lemon", "night", "ocean", "piano", "queen", "robot", "snake", "tower",
+    "bread", "candy", "tiger", "whale", "field", "grain", "horse", "judge", "maple", "novel",
+    "pearl", "quilt", "train", "voice", "witch", "bloom", "crest", "drift", "frost", "globe"
 ];
+
+/**
+ * Construye oraciones de 5 palabras a partir del banco de palabras de fallback.
+ * @param {string} language - 'es' o 'en'
+ * @param {string} difficulty - 'easy', 'medium', 'hard'
+ * @returns {string[]} Array de oraciones (strings de 5 palabras)
+ */
+function buildFallbackSentences(language = 'es', difficulty = 'medium') {
+    const wordsPool = language === 'en' ? [...FALLBACK_WORDS_EN] : [...FALLBACK_WORDS_ES];
+    const wordsPerSentence = 5;
+    const sentenceCount = difficulty === 'easy' ? 3 : difficulty === 'hard' ? 6 : 5;
+
+    // Mezclar palabras aleatoriamente
+    for (let i = wordsPool.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [wordsPool[i], wordsPool[j]] = [wordsPool[j], wordsPool[i]];
+    }
+
+    const sentences = [];
+    for (let i = 0; i < sentenceCount; i++) {
+        const start = i * wordsPerSentence;
+        const chunk = wordsPool.slice(start, start + wordsPerSentence);
+        if (chunk.length === wordsPerSentence) {
+            sentences.push(chunk.join(' '));
+        }
+    }
+
+    return sentences;
+}
 
 // URL de la API de palabras en español
 const SENTENCES_API_URL = 'https://random-word-api.herokuapp.com/word';
@@ -71,7 +97,8 @@ function isValidEnglishWord(word) {
 async function fetchSentences(language = 'es', difficulty = 'medium') {
     if (!SENTENCES_API_URL) {
         console.log('API no configurada, usando oraciones de fallback');
-        return language === 'en' ? FALLBACK_SENTENCES_EN : FALLBACK_SENTENCES;
+        showApiFallbackNotification(language);
+        return buildFallbackSentences(language, difficulty);
     }
 
     // Determinar cantidad de palabras según dificultad
@@ -85,7 +112,7 @@ async function fetchSentences(language = 'es', difficulty = 'medium') {
     // Seleccionar idioma para la API y filtro correspondiente
     const apiLang = language === 'en' ? 'en' : 'es';
     const wordFilter = language === 'en' ? isValidEnglishWord : isValidSpanishWord;
-    const fallback = language === 'en' ? FALLBACK_SENTENCES_EN : FALLBACK_SENTENCES;
+    const fallback = buildFallbackSentences(language, difficulty);
 
     try {
         const response = await fetch(`${SENTENCES_API_URL}?lang=${apiLang}&number=${requestCount}`);
@@ -129,12 +156,60 @@ async function fetchSentences(language = 'es', difficulty = 'medium') {
     } catch (error) {
         console.warn('Error al cargar palabras desde API:', error.message);
         console.log('Usando oraciones de fallback');
+        showApiFallbackNotification(language);
         return fallback;
     }
 }
 
+/**
+ * Muestra una notificación visual al usuario indicando que la API de palabras
+ * no está disponible y se están usando oraciones locales de respaldo.
+ * El mensaje se muestra en el idioma seleccionado por el jugador.
+ * @param {string} language - 'es' o 'en'
+ */
+function showApiFallbackNotification(language = 'es') {
+    // Evitar duplicados si ya existe una notificación activa
+    const existing = document.querySelector('.api-fallback-notification');
+    if (existing) existing.remove();
+
+    const messages = {
+        es: {
+            title: 'API no disponible',
+            message: 'Se están usando palabras locales de respaldo. El juego funciona con normalidad.'
+        },
+        en: {
+            title: 'API unavailable',
+            message: 'Using local fallback words. The game works normally.'
+        }
+    };
+
+    const msg = messages[language] || messages.es;
+
+    const notification = document.createElement('div');
+    notification.className = 'api-fallback-notification';
+    notification.innerHTML = `
+        <div class="api-fallback-icon">⚠️</div>
+        <div class="api-fallback-content">
+            <div class="api-fallback-title">${msg.title}</div>
+            <div class="api-fallback-message">${msg.message}</div>
+        </div>
+        <button class="api-fallback-close" onclick="this.parentElement.remove()">✕</button>
+    `;
+    document.body.appendChild(notification);
+
+    // Auto-remove después de 6 segundos
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.classList.add('fade-out');
+            setTimeout(() => {
+                if (notification.parentNode) notification.remove();
+            }, 500);
+        }
+    }, 6000);
+}
+
 // Variable que almacena las oraciones cargadas para la partida actual
-let sentenceBank = [...FALLBACK_SENTENCES];
+let sentenceBank = buildFallbackSentences('es', 'medium');
 
 // --- COMBO MANAGER CLASS ---
 class ComboManager {
