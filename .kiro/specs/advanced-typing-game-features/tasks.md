@@ -244,8 +244,8 @@ This implementation plan transforms "Type The Keyboard" into an advanced, hackat
     - _Requirements: 6.6, 6.7, 6.8_
 
 
-- [ ] 11. Implement Canvas Visual Effects
-  - [ ] 11.1 Create CanvasEffectsRenderer class
+- [x] 11. Implement Canvas Visual Effects
+  - [x] 11.1 Create CanvasEffectsRenderer class
     - Initialize canvas context with proper dimensions
     - Create Particle class with position, velocity, color, lifetime
     - Create Trail class with point array and fade animation
@@ -253,7 +253,7 @@ This implementation plan transforms "Type The Keyboard" into an advanced, hackat
     - Implement animation loop with requestAnimationFrame
     - _Requirements: 7.5_
   
-  - [ ] 11.2 Implement particle explosion effect
+  - [x] 11.2 Implement particle explosion effect
     - Create `particleExplosion(x, y, color)` method
     - Generate 30 particles in radial pattern
     - Apply gravity and velocity to particles
@@ -261,28 +261,28 @@ This implementation plan transforms "Type The Keyboard" into an advanced, hackat
     - Trigger on sentence completion
     - _Requirements: 7.1_
   
-  - [ ] 11.3 Implement neon trail effect
+  - [x] 11.3 Implement neon trail effect
     - Create `neonTrail(points, color)` method
     - Track last 10 positions of each falling word
     - Render smooth line with glow effect using shadowBlur
     - Fade out trail gradually
     - _Requirements: 7.2_
   
-  - [ ] 11.4 Implement screen shake effect
+  - [x] 11.4 Implement screen shake effect
     - Create `screenShake(intensity, duration)` method
     - Apply random x/y offsets to game container transform
     - Decay shake intensity over duration
     - Trigger on player error
     - _Requirements: 7.3_
   
-  - [ ] 11.5 Implement combo fire animation
+  - [x] 11.5 Implement combo fire animation
     - Create `comboFire(x, y)` method to generate continuous fire particles
     - Activate when combo >= 21
     - Use orange/red/yellow colors for fire effect
     - Add pulsing glow animation to combo display
     - _Requirements: 7.4_
   
-  - [ ] 11.6 Optimize canvas performance
+  - [x] 11.6 Optimize canvas performance
     - Implement particle count limit (max 500)
     - Use object pooling for particle reuse
     - Batch canvas draw calls

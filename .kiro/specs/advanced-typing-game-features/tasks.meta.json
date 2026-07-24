@@ -96,6 +96,85 @@
         "chatSessionId": "sess_4e958043-c532-458f-a591-0e471f7f9f28",
         "timestamp": 1784703436234
       }
+    ],
+    "11.1 Create CanvasEffectsRenderer class": [
+      {
+        "executionId": "9789d5b5-3f11-4006-a450-72c722a89e06",
+        "chatSessionId": "sess_efade89c-6986-463d-b674-b2c85d156c35",
+        "timestamp": 1784865068980
+      },
+      {
+        "executionId": "9789d5b5-3f11-4006-a450-72c722a89e06",
+        "chatSessionId": "sess_efade89c-6986-463d-b674-b2c85d156c35",
+        "timestamp": 1784865412109
+      }
+    ],
+    "11.2 Implement particle explosion effect": [
+      {
+        "executionId": "9789d5b5-3f11-4006-a450-72c722a89e06",
+        "chatSessionId": "sess_efade89c-6986-463d-b674-b2c85d156c35",
+        "timestamp": 1784865415291
+      },
+      {
+        "executionId": "9789d5b5-3f11-4006-a450-72c722a89e06",
+        "chatSessionId": "sess_efade89c-6986-463d-b674-b2c85d156c35",
+        "timestamp": 1784865574759
+      }
+    ],
+    "11.3 Implement neon trail effect": [
+      {
+        "executionId": "9789d5b5-3f11-4006-a450-72c722a89e06",
+        "chatSessionId": "sess_efade89c-6986-463d-b674-b2c85d156c35",
+        "timestamp": 1784865415903
+      },
+      {
+        "executionId": "9789d5b5-3f11-4006-a450-72c722a89e06",
+        "chatSessionId": "sess_efade89c-6986-463d-b674-b2c85d156c35",
+        "timestamp": 1784865575907
+      }
+    ],
+    "11.4 Implement screen shake effect": [
+      {
+        "executionId": "9789d5b5-3f11-4006-a450-72c722a89e06",
+        "chatSessionId": "sess_efade89c-6986-463d-b674-b2c85d156c35",
+        "timestamp": 1784865576990
+      },
+      {
+        "executionId": "9789d5b5-3f11-4006-a450-72c722a89e06",
+        "chatSessionId": "sess_efade89c-6986-463d-b674-b2c85d156c35",
+        "timestamp": 1784865745657
+      }
+    ],
+    "11.5 Implement combo fire animation": [
+      {
+        "executionId": "9789d5b5-3f11-4006-a450-72c722a89e06",
+        "chatSessionId": "sess_efade89c-6986-463d-b674-b2c85d156c35",
+        "timestamp": 1784865577520
+      },
+      {
+        "executionId": "9789d5b5-3f11-4006-a450-72c722a89e06",
+        "chatSessionId": "sess_efade89c-6986-463d-b674-b2c85d156c35",
+        "timestamp": 1784865746794
+      }
+    ],
+    "11.6 Optimize canvas performance": [
+      {
+        "executionId": "9789d5b5-3f11-4006-a450-72c722a89e06",
+        "chatSessionId": "sess_efade89c-6986-463d-b674-b2c85d156c35",
+        "timestamp": 1784865747889
+      },
+      {
+        "executionId": "9789d5b5-3f11-4006-a450-72c722a89e06",
+        "chatSessionId": "sess_efade89c-6986-463d-b674-b2c85d156c35",
+        "timestamp": 1784865984793
+      }
+    ],
+    "11. Implement Canvas Visual Effects": [
+      {
+        "executionId": "9789d5b5-3f11-4006-a450-72c722a89e06",
+        "chatSessionId": "sess_efade89c-6986-463d-b674-b2c85d156c35",
+        "timestamp": 1784865984875
+      }
     ]
   }
 }

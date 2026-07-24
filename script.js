@@ -188,9 +188,9 @@ class ComboManager {
     }
 
     onWordComplete(basePoints) {
-        // Apply multiplier to points before resetting combo
+        // Apply multiplier to points (combo continues between words)
         const multipliedPoints = basePoints * this.multiplier;
-        this.resetCombo();
+        // DON'T reset combo here - only reset on errors
         return multipliedPoints;
     }
 
@@ -224,6 +224,609 @@ class ComboManager {
     }
 }
 
+// --- CANVAS EFFECTS RENDERER ---
+// Foundation for all canvas visual effects. Owns an animation loop, a
+// particle collection, a trail collection, and a shake effect. Subsequent
+// tasks (11.2 - 11.5) will add the concrete effect trigger methods
+// (particleExplosion, neonTrail, screenShake, comboFire).
+
+/**
+ * A single short-lived particle used for explosions and other burst effects.
+ * update(dt) returns false when the particle has expired.
+ */
+class Particle {
+    constructor(x, y, vx, vy, color, lifetime) {
+        this.x = x;
+        this.y = y;
+        this.vx = vx;
+        this.vy = vy;
+        this.color = color;
+        this.lifetime = lifetime; // seconds
+        this.age = 0;
+        this.size = 3 + Math.random() * 2;
+    }
+
+    /**
+     * Advance the particle by dt seconds. Returns false when the particle
+     * has exceeded its lifetime and should be removed.
+     */
+    update(dt) {
+        this.age += dt;
+        if (this.age >= this.lifetime) return false;
+
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy += 0.2; // simple gravity so particles arc downward
+
+        return true;
+    }
+
+    render(ctx) {
+        const alpha = Math.max(0, 1 - (this.age / this.lifetime));
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+    }
+}
+
+/**
+ * A fading polyline that traces a series of points. Used for neon trails
+ * behind moving objects. update(dt) returns false when the alpha decays
+ * to zero.
+ */
+class Trail {
+    constructor(points, color, fadeSpeed = 0.03) {
+        // Copy points so the caller can safely mutate its own array.
+        this.points = Array.isArray(points) ? points.map(p => ({ x: p.x, y: p.y })) : [];
+        this.color = color;
+        this.fadeSpeed = fadeSpeed;
+        this.alpha = 1.0;
+    }
+
+    /**
+     * Decay the alpha. Returns false once the trail has faded out.
+     * dt is accepted for API symmetry but the current fade model is
+     * per-frame; multiplying by dt*60 keeps it approximately frame-rate
+     * independent.
+     */
+    update(dt) {
+        this.alpha -= this.fadeSpeed * (dt > 0 ? dt * 60 : 1);
+        return this.alpha > 0;
+    }
+
+    render(ctx) {
+        if (this.points.length < 2) return;
+
+        ctx.globalAlpha = Math.max(0, this.alpha);
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = 3;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = this.color;
+
+        ctx.beginPath();
+        ctx.moveTo(this.points[0].x, this.points[0].y);
+        for (let i = 1; i < this.points.length; i++) {
+            ctx.lineTo(this.points[i].x, this.points[i].y);
+        }
+        ctx.stroke();
+
+        ctx.globalAlpha = 1;
+        ctx.shadowBlur = 0;
+    }
+}
+
+/**
+ * A stateful screen-shake generator. update(dt) returns an {x,y} offset
+ * every frame while the shake is active. Intensity decays linearly across
+ * the duration.
+ */
+class ShakeEffect {
+    constructor() {
+        this.intensity = 0;
+        this.duration = 0;
+        this.elapsed = 0;
+    }
+
+    /**
+     * Start (or restart) a shake for `duration` seconds with the given
+     * peak intensity in pixels.
+     */
+    start(intensity, duration) {
+        this.intensity = intensity;
+        this.duration = duration;
+        this.elapsed = 0;
+    }
+
+    /**
+     * Advance the shake and return the current per-frame offset. When the
+     * shake has expired the returned offset is {0, 0}.
+     */
+    update(dt) {
+        if (this.duration <= 0 || this.elapsed >= this.duration) {
+            this.intensity = 0;
+            return { x: 0, y: 0 };
+        }
+
+        this.elapsed += dt;
+
+        const progress = Math.min(1, this.elapsed / this.duration);
+        const currentIntensity = this.intensity * (1 - progress);
+
+        return {
+            x: (Math.random() - 0.5) * currentIntensity * 2,
+            y: (Math.random() - 0.5) * currentIntensity * 2
+        };
+    }
+
+    isActive() {
+        return this.intensity > 0 && this.elapsed < this.duration;
+    }
+}
+
+/**
+ * CanvasEffectsRenderer
+ * ---------------------
+ * Owns the effects canvas and drives an animation loop that updates and
+ * renders all active particles and trails. Exposes start()/stop() to
+ * control the loop lifecycle. Concrete effect triggers (particleExplosion,
+ * neonTrail, screenShake, comboFire) will be added by subsequent subtasks.
+ */
+class CanvasEffectsRenderer {
+    // --- Performance tuning constants ---
+    // Hard ceiling on live particles. When the effective budget (which
+    // shrinks under adaptive quality reduction) is exceeded, the oldest
+    // particles are released to the pool to make room.
+    static MAX_PARTICLES = 500;
+    // Soft cap on the pool itself so it never grows unbounded even if a
+    // gameplay burst releases far more particles than we'll ever reuse.
+    static POOL_CAP = 600;
+    // Rolling window (in frames) used to estimate the current FPS.
+    static FPS_WINDOW = 30;
+    // Number of consecutive frames below / above threshold before the
+    // qualityLevel changes. Kept short so the game stays responsive
+    // to sustained drops without flickering on brief hitches.
+    static LOW_FPS_STREAK = 20;
+    static HIGH_FPS_STREAK = 60;
+    static LOW_FPS_THRESHOLD = 45;
+    static HIGH_FPS_THRESHOLD = 55;
+
+    constructor(canvasElement) {
+        if (!canvasElement) {
+            throw new Error('CanvasEffectsRenderer requires a canvas element');
+        }
+        this.canvas = canvasElement;
+        this.ctx = canvasElement.getContext('2d');
+
+        this.particles = [];
+        this.trails = [];
+        this.shake = new ShakeEffect();
+
+        // Object pool for particle reuse. Freed particles from update()
+        // are pushed here and popped by _acquireParticle() before we fall
+        // back to allocating a new Particle.
+        this._particlePool = [];
+
+        // Adaptive quality: 0 = full budget, 1 = half, 2 = quarter.
+        // Updated by _sampleFps() as the observed frame rate rises or falls.
+        this._qualityLevel = 0;
+        this._currentFps = 60;
+        // Ring buffer of recent per-frame dt values (in seconds).
+        this._fpsSamples = [];
+        this._fpsSampleIndex = 0;
+        // Consecutive-frame counters that drive quality transitions.
+        this._lowFpsFrames = 0;
+        this._highFpsFrames = 0;
+        // Toggle for skipping alternate neonTrail spawns under quality
+        // reduction. Incremented every call regardless of quality so the
+        // spawn pattern stays deterministic when quality changes.
+        this._neonTrailToggle = 0;
+
+        // Lazily-resolved reference to the game container DOM node whose
+        // transform is offset by the active screen-shake. Looked up on
+        // first use in update() so we don't query the DOM every frame or
+        // require the container to exist at construction time.
+        this._shakeTarget = null;
+        // Tracks whether the previous frame applied a non-zero shake so
+        // we can reset the transform exactly once on the trailing edge.
+        this._shakeWasActive = false;
+
+        this.animationId = null;
+        this.lastFrameTime = 0;
+        this.running = false;
+
+        // Bind so we can add/remove the resize listener cleanly.
+        this._onResize = this._resizeCanvas.bind(this);
+        this._resizeCanvas();
+        window.addEventListener('resize', this._onResize);
+    }
+
+    /**
+     * Rolling-average FPS observed over the last ~30 frames. Public so a
+     * dev overlay can read it, but the class itself uses it only to drive
+     * adaptive quality reduction.
+     */
+    get currentFps() {
+        return this._currentFps;
+    }
+
+    /**
+     * Current quality tier. 0 = full particle budget, 1 = half, 2 = quarter.
+     * Exposed for tests / dev overlays.
+     */
+    get qualityLevel() {
+        return this._qualityLevel;
+    }
+
+    /**
+     * Effective particle budget for the current quality tier.
+     * Level 0 → MAX_PARTICLES, level 1 → MAX_PARTICLES/2, level 2 → /4.
+     */
+    _effectiveMaxParticles() {
+        return CanvasEffectsRenderer.MAX_PARTICLES >> this._qualityLevel;
+    }
+
+    /**
+     * Pop a Particle from the pool (re-initializing its fields) or allocate
+     * a fresh one when the pool is empty. Callers must go through this
+     * helper instead of `new Particle(...)` so recycled objects get reused.
+     */
+    _acquireParticle(x, y, vx, vy, color, lifetime) {
+        const p = this._particlePool.pop();
+        if (p) {
+            p.x = x;
+            p.y = y;
+            p.vx = vx;
+            p.vy = vy;
+            p.color = color;
+            p.lifetime = lifetime;
+            p.age = 0;
+            p.size = 3 + Math.random() * 2;
+            return p;
+        }
+        return new Particle(x, y, vx, vy, color, lifetime);
+    }
+
+    /**
+     * Return a spent Particle to the pool. Silently drops it if the pool
+     * has hit its soft cap so the pool itself can't grow unbounded.
+     */
+    _releaseParticle(p) {
+        if (this._particlePool.length < CanvasEffectsRenderer.POOL_CAP) {
+            this._particlePool.push(p);
+        }
+    }
+
+    /**
+     * Push a particle into the live particle array, enforcing the effective
+     * MAX_PARTICLES budget. When the budget is exceeded, the oldest particle
+     * is released back to the pool to make room (FIFO eviction so bursts
+     * from a single call all stay together for as long as possible).
+     */
+    _addParticle(p) {
+        const max = this._effectiveMaxParticles();
+        if (this.particles.length >= max) {
+            const oldest = this.particles.shift();
+            if (oldest) this._releaseParticle(oldest);
+        }
+        this.particles.push(p);
+    }
+
+    /**
+     * Feed the FPS rolling average with the latest frame delta and update
+     * the quality tier when the observed FPS has been below / above the
+     * threshold for enough consecutive frames.
+     */
+    _sampleFps(dt) {
+        if (dt <= 0) return;
+        const WINDOW = CanvasEffectsRenderer.FPS_WINDOW;
+        if (this._fpsSamples.length < WINDOW) {
+            this._fpsSamples.push(dt);
+        } else {
+            this._fpsSamples[this._fpsSampleIndex] = dt;
+            this._fpsSampleIndex = (this._fpsSampleIndex + 1) % WINDOW;
+        }
+
+        // Average dt across the window, then invert to get FPS.
+        let sum = 0;
+        for (let i = 0; i < this._fpsSamples.length; i++) sum += this._fpsSamples[i];
+        const avgDt = sum / this._fpsSamples.length;
+        this._currentFps = avgDt > 0 ? 1 / avgDt : 60;
+
+        // Adaptive quality transitions. Uses simple hysteresis: LOW streak
+        // to step down, longer HIGH streak to step back up. This makes us
+        // quick to protect frame rate but slow to relax so we don't yo-yo.
+        if (this._currentFps < CanvasEffectsRenderer.LOW_FPS_THRESHOLD) {
+            this._lowFpsFrames++;
+            this._highFpsFrames = 0;
+            if (this._lowFpsFrames >= CanvasEffectsRenderer.LOW_FPS_STREAK && this._qualityLevel < 2) {
+                this._qualityLevel++;
+                this._lowFpsFrames = 0;
+            }
+        } else if (this._currentFps > CanvasEffectsRenderer.HIGH_FPS_THRESHOLD) {
+            this._highFpsFrames++;
+            this._lowFpsFrames = 0;
+            if (this._highFpsFrames >= CanvasEffectsRenderer.HIGH_FPS_STREAK && this._qualityLevel > 0) {
+                this._qualityLevel--;
+                this._highFpsFrames = 0;
+            }
+        } else {
+            // Between the two thresholds: hold current tier, decay streaks.
+            this._lowFpsFrames = 0;
+            this._highFpsFrames = 0;
+        }
+    }
+
+    /**
+     * Resize the canvas backing store to match the window (or its parent
+     * client rect when the window is unavailable). Uses devicePixelRatio
+     * for crisp rendering on high-DPI displays.
+     */
+    _resizeCanvas() {
+        const width = window.innerWidth || document.documentElement.clientWidth || this.canvas.clientWidth || 1200;
+        const height = window.innerHeight || document.documentElement.clientHeight || this.canvas.clientHeight || 800;
+        const dpr = window.devicePixelRatio || 1;
+
+        // Set the CSS size so the canvas actually covers the viewport.
+        this.canvas.style.width = width + 'px';
+        this.canvas.style.height = height + 'px';
+
+        // Set the backing store size and scale the context so drawing
+        // commands use CSS pixels.
+        this.canvas.width = Math.floor(width * dpr);
+        this.canvas.height = Math.floor(height * dpr);
+        this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    /**
+     * Begin the animation loop. Idempotent - a second call is a no-op.
+     */
+    start() {
+        if (this.running) return;
+        this.running = true;
+        this.lastFrameTime = performance.now();
+        const loop = (now) => {
+            if (!this.running) return;
+            const dt = (now - this.lastFrameTime) / 1000; // seconds
+            this.lastFrameTime = now;
+
+            // Sample the observed dt before we clamp it inside update() so
+            // a real drop shows up in the rolling average.
+            this._sampleFps(dt);
+
+            this.update(dt);
+            this.render();
+
+            this.animationId = requestAnimationFrame(loop);
+        };
+        this.animationId = requestAnimationFrame(loop);
+    }
+
+    /**
+     * Stop the animation loop and clear any active particles/trails so
+     * the next start() begins from a clean slate.
+     */
+    stop() {
+        this.running = false;
+        if (this.animationId !== null) {
+            cancelAnimationFrame(this.animationId);
+            this.animationId = null;
+        }
+        // Recycle live particles into the pool before clearing so the
+        // next start() session gets a warm pool and doesn't re-allocate.
+        for (let i = 0; i < this.particles.length; i++) {
+            this._releaseParticle(this.particles[i]);
+        }
+        this.particles.length = 0;
+        this.trails.length = 0;
+        // Clear the canvas one last time so no stale pixels remain.
+        if (this.ctx && this.canvas.width > 0 && this.canvas.height > 0) {
+            this.ctx.save();
+            this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            this.ctx.restore();
+        }
+    }
+
+    /**
+     * Advance simulation by dt seconds. Removes dead particles/trails.
+     * Also drives the ShakeEffect: consumes its per-frame {x,y} offset
+     * and writes it to the #gameContainer transform so the whole game
+     * jitters briefly on player errors.
+     */
+    update(dt) {
+        // Cap dt so a paused tab doesn't cause a large jump when resumed.
+        const clampedDt = Math.min(dt, 0.1);
+
+        // Update particles, keep only those still alive. Dead particles
+        // are released to the pool before being spliced out so they can
+        // be re-acquired on the next burst without allocating.
+        for (let i = this.particles.length - 1; i >= 0; i--) {
+            const p = this.particles[i];
+            if (!p.update(clampedDt)) {
+                this._releaseParticle(p);
+                this.particles.splice(i, 1);
+            }
+        }
+
+        // Update trails, keep only those still visible.
+        for (let i = this.trails.length - 1; i >= 0; i--) {
+            if (!this.trails[i].update(clampedDt)) {
+                this.trails.splice(i, 1);
+            }
+        }
+
+        // Drive the screen-shake. Lazily resolve the container once so
+        // we don't hit the DOM every frame.
+        if (this._shakeTarget === null && typeof document !== 'undefined') {
+            this._shakeTarget = document.getElementById('gameContainer');
+        }
+
+        if (this._shakeTarget) {
+            const shakeActive = this.shake.isActive();
+            if (shakeActive) {
+                const offset = this.shake.update(clampedDt);
+                this._shakeTarget.style.transform = `translate(${offset.x}px, ${offset.y}px)`;
+                this._shakeWasActive = true;
+            } else if (this._shakeWasActive) {
+                // Trailing edge: clear the transform exactly once when the
+                // shake finishes so we don't leave the container offset.
+                this._shakeTarget.style.transform = 'translate(0, 0)';
+                this._shakeWasActive = false;
+            }
+        }
+    }
+
+    /**
+     * Clear the canvas and draw all active effects. Uses a single
+     * save/restore around each pass (trails, then particles) and groups
+     * particles by color so we only set fillStyle once per color instead
+     * of once per particle.
+     */
+    render() {
+        const ctx = this.ctx;
+        if (!ctx) return;
+
+        // Clear the visible area (accounting for the DPR transform).
+        const cssWidth = this.canvas.width / (window.devicePixelRatio || 1);
+        const cssHeight = this.canvas.height / (window.devicePixelRatio || 1);
+        ctx.clearRect(0, 0, cssWidth, cssHeight);
+
+        // --- Trail pass ---
+        // Trails set their own shadowBlur / strokeStyle per instance; one
+        // save/restore around the whole loop keeps that state contained
+        // without paying per-particle save cost.
+        if (this.trails.length > 0) {
+            ctx.save();
+            for (let i = 0; i < this.trails.length; i++) {
+                this.trails[i].render(ctx);
+            }
+            ctx.restore();
+        }
+
+        // --- Particle pass (batched by color) ---
+        // Particles fade individually (globalAlpha per particle) but share
+        // fillStyle within a color group, so we bin them by color and set
+        // fillStyle once per group. This turns N fillStyle string sets
+        // into K (colors) plus reduces state churn on the 2D context.
+        if (this.particles.length > 0) {
+            ctx.save();
+
+            // Bin particles by color. Map keeps insertion order so we
+            // draw in a stable sequence regardless of how JS engines
+            // hash the color strings.
+            const byColor = new Map();
+            for (let i = 0; i < this.particles.length; i++) {
+                const p = this.particles[i];
+                let group = byColor.get(p.color);
+                if (!group) {
+                    group = [];
+                    byColor.set(p.color, group);
+                }
+                group.push(p);
+            }
+
+            for (const [color, group] of byColor) {
+                ctx.fillStyle = color;
+                for (let i = 0; i < group.length; i++) {
+                    const p = group[i];
+                    const alpha = Math.max(0, 1 - (p.age / p.lifetime));
+                    if (alpha <= 0) continue;
+                    ctx.globalAlpha = alpha;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            ctx.globalAlpha = 1;
+            ctx.restore();
+        }
+    }
+
+    /**
+     * Trigger a radial particle burst at (x, y). Spawns 30 particles evenly
+     * distributed around a circle, each with a randomized speed (2-5) and
+     * lifetime (0.5-1s). Gravity is applied by Particle.update, so the
+     * particles arc downward as they fade out.
+     */
+    particleExplosion(x, y, color) {
+        const particleCount = 30;
+        for (let i = 0; i < particleCount; i++) {
+            const angle = (Math.PI * 2 * i) / particleCount;
+            const speed = 2 + Math.random() * 3; // 2-5
+            const vx = Math.cos(angle) * speed;
+            const vy = Math.sin(angle) * speed;
+            const lifetime = 0.5 + Math.random() * 0.5; // 0.5-1s
+            this._addParticle(this._acquireParticle(x, y, vx, vy, color, lifetime));
+        }
+    }
+
+    /**
+     * Push a neon trail into the effects queue. `points` is an array of
+     * {x, y} CSS-pixel coordinates in viewport space (the canvas covers
+     * the full viewport). Renders as a smooth polyline with a glow via
+     * shadowBlur and fades out per Trail.update. Points fewer than two
+     * are ignored by Trail.render, so we still enqueue them defensively.
+     */
+    neonTrail(points, color = '#89b4fa') {
+        if (!Array.isArray(points) || points.length < 2) return;
+
+        // Under adaptive quality reduction, drop every other trail spawn.
+        // We still count every call so the pattern stays deterministic
+        // regardless of which frames are skipped.
+        const toggle = this._neonTrailToggle++;
+        if (this._qualityLevel >= 1 && (toggle & 1) === 0) return;
+
+        this.trails.push(new Trail(points, color));
+    }
+
+    /**
+     * Kick off a screen shake. `intensity` is the peak per-frame offset
+     * in pixels; `duration` is the total shake time in seconds. The
+     * ShakeEffect decays intensity linearly across the duration, and
+     * update() applies the current {x,y} offset to the game container's
+     * transform each frame.
+     */
+    screenShake(intensity, duration) {
+        this.shake.start(intensity, duration);
+    }
+
+    /**
+     * Spawn a small burst of fire particles rising upward from (x, y).
+     * Intended to be called every few frames from the animation loop while
+     * the player's combo is >= 21. Each call spawns 3-5 particles with a
+     * small upward velocity, slight horizontal jitter, a short lifetime,
+     * and one of three warm fire colors chosen at random. Does NOT use
+     * setInterval - the caller drives the cadence from requestAnimationFrame.
+     */
+    comboFire(x, y) {
+        const fireColors = ['#fab387', '#f38ba8', '#f9e2af']; // orange, red, yellow
+        const count = 3 + Math.floor(Math.random() * 3); // 3-5 particles per burst
+        for (let i = 0; i < count; i++) {
+            const vx = (Math.random() - 0.5) * 1.0;    // -0.5 .. 0.5
+            const vy = -3 + Math.random() * 1.5;       // -3 .. -1.5 (upward)
+            const color = fireColors[Math.floor(Math.random() * fireColors.length)];
+            const lifetime = 0.6 + Math.random() * 0.4; // ~0.6-1.0s (avg ~0.8s)
+            // Slight positional jitter so particles don't all start at the exact same pixel.
+            const px = x + (Math.random() - 0.5) * 6;
+            const py = y + (Math.random() - 0.5) * 4;
+            this._addParticle(this._acquireParticle(px, py, vx, vy, color, lifetime));
+        }
+    }
+
+    /**
+     * Tear down listeners. Currently only invoked by tests, but keeps the
+     * class self-contained.
+     */
+    destroy() {
+        this.stop();
+        window.removeEventListener('resize', this._onResize);
+    }
+}
+
 // --- STATE ---
 let gameActive = false;
 let gameStartTime = null;
@@ -232,6 +835,7 @@ let currentTypedText = '';
 let words = [];
 let wordStates = []; // Track Y position and status for each word
 let animationFrameId = null;
+let animationFrameCount = 0; // Monotonic frame counter for effect throttling
 let currentDifficulty = 'medium';
 
 // Stats tracking
@@ -252,6 +856,9 @@ let keyboardVisualizer = null;
 
 // Stats tracker instance
 let statsTracker = null;
+
+// Canvas effects renderer instance
+let canvasEffects = null;
 
 // Game configuration
 let WORD_SPEED = 1.5; // pixels per frame (adjusted per difficulty)
@@ -357,6 +964,22 @@ async function initGame() {
         }
     }
 
+    // Initialize canvas effects renderer if not exists.
+    // Concrete effect triggers are added in later subtasks (11.2 - 11.5);
+    // this task only stands up the class and its animation loop.
+    if (!canvasEffects) {
+        const effectsCanvasEl = document.getElementById('effectsCanvas');
+        if (effectsCanvasEl) {
+            try {
+                canvasEffects = new CanvasEffectsRenderer(effectsCanvasEl);
+            } catch (error) {
+                console.error('Failed to initialize canvas effects renderer:', error);
+            }
+        } else {
+            console.warn('#effectsCanvas element not found - canvas effects disabled');
+        }
+    }
+
     // Hide menu, show game
     if (menuScreen) menuScreen.style.display = 'none';
     if (gameContainer) gameContainer.style.display = '';
@@ -456,6 +1079,10 @@ function startGame() {
         audioEngine.initialize().then(success => {
             if (success) {
                 console.log('Audio initialized successfully');
+                // Wire up the genre-change notification
+                audioEngine.setGenreChangeCallback((newGenre) => {
+                    showGenreChangeNotification(newGenre);
+                });
                 // Start with beat layer
                 audioEngine.updateLayers(0);
             } else {
@@ -463,6 +1090,15 @@ function startGame() {
             }
         }).catch(error => {
             console.error('Audio initialization error:', error);
+        });
+    } else if (audioEngine && audioEngine.isInitialized) {
+        // Already initialized (previous game ended and called stopAll()) —
+        // restart the transport, rebuild layers and reset to the initial genre
+        audioEngine.restart();
+
+        // Re-attach the callback in case it was cleared
+        audioEngine.setGenreChangeCallback((newGenre) => {
+            showGenreChangeNotification(newGenre);
         });
     }
 
@@ -474,6 +1110,12 @@ function startGame() {
         if (currentWordIndex < words.length && words[currentWordIndex].length > 0) {
             keyboardVisualizer.highlightKey(words[currentWordIndex][0], 'expected');
         }
+    }
+
+    // Start the canvas effects animation loop. No effects are triggered
+    // yet - later subtasks will hook effect calls into gameplay events.
+    if (canvasEffects) {
+        canvasEffects.start();
     }
 
     // Show all words
@@ -529,6 +1171,35 @@ function animate() {
         }
     });
 
+    // Advance the frame counter used by throttled effects below (combo
+    // fire uses `animationFrameCount % 3`). The neon-trail spawn loop
+    // that previously ran here was removed - the descending blue trails
+    // read as "piano tutorial" guides and distracted from the falling
+    // words. The Trail class and CanvasEffectsRenderer.neonTrail() are
+    // preserved for potential future use.
+    animationFrameCount++;
+
+    // Task 11.5: continuous combo fire particles while the combo is >= 21.
+    // The effects canvas is viewport-fixed, so we position bursts at the
+    // combo display's viewport center via getBoundingClientRect. Throttled
+    // to every 3 frames so we don't flood the particle array.
+    if (canvasEffects && comboManager && comboManager.getCurrentCombo() >= 21) {
+        if (animationFrameCount % 3 === 0) {
+            const comboEl = document.getElementById('comboValue')
+                || document.getElementById('comboDisplay');
+            if (comboEl) {
+                const rect = comboEl.getBoundingClientRect();
+                if (rect.width > 0 || rect.height > 0) {
+                    const fx = rect.left + rect.width / 2;
+                    // Spawn near the bottom of the element so particles rise
+                    // through and past the combo counter for a flame look.
+                    const fy = rect.top + rect.height * 0.85;
+                    canvasEffects.comboFire(fx, fy);
+                }
+            }
+        }
+    }
+
     // Update live stats
     updateLiveStats();
 
@@ -563,6 +1234,11 @@ function addWordToAccumulated(word) {
         completedSentences++;
         totalScore += SENTENCE_BONUS;
 
+        // Sentence bonus can push the score across a genre threshold too
+        if (audioEngine && audioEngine.isInitialized) {
+            audioEngine.updateGenre(totalScore);
+        }
+
         // Track sentence completion (perfect if no errors in this sentence)
         if (statsTracker) {
             const hasErrors = false; // We'd need to track this per sentence
@@ -572,6 +1248,26 @@ function addWordToAccumulated(word) {
         // Play sentence complete sound
         if (audioEngine && audioEngine.isInitialized) {
             audioEngine.playSentenceComplete();
+        }
+
+        // Particle explosion at the completed word position (viewport coords
+        // align with the fixed, viewport-sized effects canvas).
+        if (canvasEffects) {
+            const completedState = wordStates[currentWordIndex];
+            let ex, ey;
+            if (completedState && completedState.element) {
+                const rect = completedState.element.getBoundingClientRect();
+                ex = rect.left + rect.width / 2;
+                ey = rect.top + rect.height / 2;
+            } else if (completedState && typeof completedState.y === 'number') {
+                // Fallback: use the last known state.y and horizontal center.
+                ex = (window.innerWidth || document.documentElement.clientWidth || 800) / 2;
+                ey = completedState.y;
+            } else {
+                ex = (window.innerWidth || document.documentElement.clientWidth || 800) / 2;
+                ey = (window.innerHeight || document.documentElement.clientHeight || 600) / 2;
+            }
+            canvasEffects.particleExplosion(ex, ey, '#f9e2af');
         }
 
         // Animate the completed sentence
@@ -625,6 +1321,11 @@ function markWordAsMissed(index) {
         audioEngine.removeLayers();
     }
 
+    // Screen shake to emphasize the missed word
+    if (canvasEffects) {
+        canvasEffects.screenShake(10, 0.35);
+    }
+
     // Visual feedback
     if (state.element) {
         state.element.style.display = 'none';
@@ -674,6 +1375,11 @@ function markWordAsCompleted(index) {
     const multipliedPoints = comboManager.onWordComplete(basePoints);
     totalScore += multipliedPoints;
 
+    // Notify audio engine of new total score so it can update the genre
+    if (audioEngine && audioEngine.isInitialized) {
+        audioEngine.updateGenre(totalScore);
+    }
+
     // Add word to accumulated area
     addWordToAccumulated(words[index]);
 
@@ -707,6 +1413,15 @@ function markWordAsCompleted(index) {
 
 // --- INPUT HANDLER ---
 document.addEventListener('keydown', function (e) {
+    // If the results screen is visible, Enter restarts the game
+    if (resultsDiv.classList.contains('active')) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            restartGame();
+        }
+        return; // Ignore all other input while results are visible
+    }
+
     if (!gameActive && !resultsDiv.classList.contains('active')) {
         // Start game only on Enter
         if (e.key === 'Enter') {
@@ -802,6 +1517,11 @@ document.addEventListener('keydown', function (e) {
                 audioEngine.playErrorSound();
                 audioEngine.removeLayers();
             }
+
+            // Punchy screen shake on wrong keystroke
+            if (canvasEffects) {
+                canvasEffects.screenShake(8, 0.25);
+            }
         }
 
         // Auto-complete if word matches fully
@@ -894,6 +1614,11 @@ function endGame() {
         keyboardVisualizer.hide();
     }
 
+    // Stop the canvas effects animation loop.
+    if (canvasEffects) {
+        canvasEffects.stop();
+    }
+
     // Calculate session data and save to IndexedDB
     if (statsTracker) {
         const elapsedSeconds = Math.floor((Date.now() - gameStartTime) / 1000);
@@ -934,16 +1659,64 @@ function endGame() {
     document.getElementById('resultCombo').textContent = comboManager ? comboManager.getHighestCombo() : 0;
 
     resultsDiv.classList.add('active');
+
+    // Hide overlapping UI elements during results screen so they don't
+    // cover the "Regresar" / "Reiniciar" buttons or the results grid.
+    const comboDisplay = document.getElementById('comboDisplay');
+    if (comboDisplay) comboDisplay.style.display = 'none';
+
+    const effectsCanvas = document.getElementById('effectsCanvas');
+    if (effectsCanvas) effectsCanvas.style.display = 'none';
+
+    const gameArea = document.querySelector('.game-area');
+    if (gameArea) gameArea.style.display = 'none';
+
+    const accumulatedSentencesEl = document.getElementById('accumulatedSentences');
+    if (accumulatedSentencesEl) accumulatedSentencesEl.style.display = 'none';
+}
+
+// --- RESTORE UI ELEMENTS AFTER RESULTS ---
+// Undoes the inline `display:none` we set in endGame() so the next game
+// (or the menu) shows the full UI again. Kept as a single helper so
+// restartGame() and goToMenu() stay in sync.
+function restoreGameUI() {
+    const comboDisplay = document.getElementById('comboDisplay');
+    if (comboDisplay) comboDisplay.style.display = '';
+
+    const effectsCanvas = document.getElementById('effectsCanvas');
+    if (effectsCanvas) effectsCanvas.style.display = '';
+
+    const gameArea = document.querySelector('.game-area');
+    if (gameArea) gameArea.style.display = '';
+
+    const accumulatedSentencesEl = document.getElementById('accumulatedSentences');
+    if (accumulatedSentencesEl) accumulatedSentencesEl.style.display = '';
+
+    // endGame() also hid the text display via inline style. Restore it
+    // so initGame() can size it correctly on the next session.
+    if (textDisplay) textDisplay.style.display = '';
 }
 
 // --- RESTART GAME ---
 async function restartGame() {
+    // Restore any UI elements that endGame() hid before we start over
+    restoreGameUI();
     resultsDiv.classList.remove('active');
     await initGame();
 }
 
 // --- GO TO MENU ---
 function goToMenu() {
+    // Stop any music/SFX that was still playing when the user backed out
+    // of a live game. Placed here (not inside cleanGameState) because
+    // cleanGameState() is also called at the start of initGame(), and we
+    // don't want to tear down audio right before starting a new game.
+    if (audioEngine && audioEngine.isInitialized) {
+        audioEngine.stopAll();
+    }
+    // Restore hidden UI so the next game session starts in a clean state
+    restoreGameUI();
+    resultsDiv.classList.remove('active');
     cleanGameState();
     if (gameContainer) gameContainer.style.display = 'none';
     if (menuScreen) menuScreen.style.display = '';
@@ -1391,4 +2164,50 @@ function showEmptyState() {
 
     const difficultWordsList = document.getElementById('difficultWordsList');
     if (difficultWordsList) difficultWordsList.innerHTML = emptyHTML;
+}
+
+// --- GENRE CHANGE NOTIFICATION ---
+// Shows a large, animated banner announcing the new music genre.
+// Triggered by the audio engine callback when the total score crosses a threshold.
+function showGenreChangeNotification(genre) {
+    const displayNames = {
+        trap: '🎤 TRAP',
+        lofi: '🌙 LO-FI HIP HOP',
+        synthwave: '🕹️ SYNTHWAVE',
+        dnb: '🎧 DRUM & BASS',
+        futurebass: '🚀 FUTURE BASS'
+    };
+
+    const genreColors = {
+        trap: '#f38ba8',
+        lofi: '#cba6f7',
+        synthwave: '#f9e2af',
+        dnb: '#89b4fa',
+        futurebass: '#a6e3a1'
+    };
+
+    const label = displayNames[genre] || String(genre || '').toUpperCase();
+    const color = genreColors[genre] || '#89b4fa';
+
+    // Remove any existing notification so back-to-back changes don't stack
+    const existing = document.querySelector('.genre-notification');
+    if (existing) existing.remove();
+
+    const notification = document.createElement('div');
+    notification.className = 'genre-notification';
+    notification.style.borderColor = color;
+    notification.style.color = color;
+    notification.innerHTML = `
+        <div class="genre-label">NEW BEAT UNLOCKED</div>
+        <div class="genre-name">${label}</div>
+    `;
+    document.body.appendChild(notification);
+
+    // Auto-remove after ~3s with a fade-out animation
+    setTimeout(() => {
+        notification.classList.add('fade-out');
+        setTimeout(() => {
+            if (notification.parentNode) notification.remove();
+        }, 500);
+    }, 3000);
 }

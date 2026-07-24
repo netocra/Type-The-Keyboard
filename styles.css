@@ -251,6 +251,10 @@ body {
     align-items: center;
     gap: 2rem;
     animation: fadeIn 0.4s ease;
+    position: relative;
+    /* Sit above the combo display and effects canvas so nothing overlaps
+       the "Regresar" / "Reiniciar" buttons on the results screen. */
+    z-index: 30;
 }
 
 .results.active {
@@ -315,7 +319,20 @@ body {
 
 .restart-hint {
     font-size: 0.75rem;
-    color: #45475a;
+    color: #585b70;
+    margin-top: 0.5rem;
+}
+
+.restart-hint kbd {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    font-family: inherit;
+    font-size: 0.75rem;
+    color: #89b4fa;
+    background: #313244;
+    border: 1px solid #45475a;
+    border-radius: 4px;
+    margin: 0 0.2rem;
 }
 
 /* Footer */
@@ -851,17 +868,24 @@ body {
     }
 }
 
-/* Combo Display Styles */
+/* Combo Display Styles
+ * In-flow flex column that sits as a third pane inside .game-area,
+ * to the right of the visual keyboard. Previously position:fixed on
+ * the right edge, which overlapped the visual keyboard on typical
+ * viewport widths. getBoundingClientRect() still returns viewport
+ * coordinates, so the combo-fire particle burst (Task 11.5) continues
+ * to spawn at the correct on-screen location.
+ */
 .combo-display {
-    position: fixed;
-    top: 50%;
-    right: 2rem;
-    transform: translateY(-50%);
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     gap: 1rem;
-    z-index: 20;
+    flex-shrink: 0;
+    /* Lower than .results (z-index: 30) so the results grid and buttons
+       stay clickable when the results screen is shown. */
+    z-index: 15;
 }
 
 .combo-counter {
@@ -909,22 +933,43 @@ body {
 
 /* Combo fire effect (for combo 21+) */
 .combo-counter.on-fire {
-    animation: fireGlow 0.5s ease-in-out infinite alternate;
+    animation: fireGlow 0.6s ease-in-out infinite alternate;
     border-color: #f38ba8;
 }
 
 .combo-counter.on-fire .combo-value {
     color: #f38ba8;
-    text-shadow: 0 0 15px rgba(243, 139, 168, 0.8);
+    animation: fireTextPulse 0.6s ease-in-out infinite alternate;
 }
 
 @keyframes fireGlow {
-    from {
+    0% {
         box-shadow: 0 0 20px rgba(243, 139, 168, 0.5);
+        filter: drop-shadow(0 0 6px rgba(249, 226, 175, 0.4));
     }
 
-    to {
-        box-shadow: 0 0 40px rgba(243, 139, 168, 0.8), 0 0 60px rgba(251, 179, 135, 0.6);
+    50% {
+        box-shadow: 0 0 30px rgba(250, 179, 135, 0.7), 0 0 50px rgba(249, 226, 175, 0.5);
+        filter: drop-shadow(0 0 10px rgba(250, 179, 135, 0.6));
+    }
+
+    100% {
+        box-shadow: 0 0 40px rgba(243, 139, 168, 0.8), 0 0 60px rgba(251, 179, 135, 0.6), 0 0 80px rgba(249, 226, 175, 0.4);
+        filter: drop-shadow(0 0 14px rgba(243, 139, 168, 0.7));
+    }
+}
+
+@keyframes fireTextPulse {
+    0% {
+        text-shadow: 0 0 8px rgba(249, 226, 175, 0.6), 0 0 14px rgba(250, 179, 135, 0.5);
+    }
+
+    50% {
+        text-shadow: 0 0 12px rgba(250, 179, 135, 0.8), 0 0 22px rgba(243, 139, 168, 0.6);
+    }
+
+    100% {
+        text-shadow: 0 0 18px rgba(243, 139, 168, 0.9), 0 0 28px rgba(249, 226, 175, 0.7);
     }
 }
 
@@ -1504,5 +1549,431 @@ body {
 
     .difficult-word-count {
         font-size: 1.4rem;
+    }
+}
+
+/* ========================================================
+   GENRE CHANGE NOTIFICATION (music progression system)
+   Compact notification in top-right corner
+   ======================================================== */
+.genre-notification {
+    position: fixed;
+    top: 6rem;
+    right: 2rem;
+    background: rgba(24, 24, 37, 0.95);
+    border: 2px solid;
+    border-radius: 10px;
+    padding: 0.8rem 1.2rem;
+    text-align: left;
+    z-index: 10000;
+    animation: genreSlideIn 0.4s ease-out;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    pointer-events: none;
+    max-width: 240px;
+}
+
+.genre-notification .genre-label {
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    opacity: 0.6;
+    margin-bottom: 0.2rem;
+    font-weight: 600;
+}
+
+.genre-notification .genre-name {
+    font-size: 1.1rem;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    text-shadow: 0 0 15px currentColor;
+    animation: genrePulse 1.5s ease-in-out infinite;
+    white-space: nowrap;
+}
+
+.genre-notification.fade-out {
+    animation: genreFadeOut 0.4s ease-in forwards;
+}
+
+@keyframes genreSlideIn {
+    0% {
+        opacity: 0;
+        transform: translateX(400px);
+    }
+
+    60% {
+        transform: translateX(-10px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes genrePulse {
+
+    0%,
+    100% {
+        text-shadow: 0 0 15px currentColor;
+    }
+
+    50% {
+        text-shadow: 0 0 25px currentColor, 0 0 40px currentColor;
+    }
+}
+
+@keyframes genreFadeOut {
+    to {
+        opacity: 0;
+        transform: translateX(400px);
+    }
+}
+
+@media (max-width: 600px) {
+    .genre-notification {
+        top: 5rem;
+        right: 1rem;
+        padding: 0.6rem 1rem;
+        max-width: 180px;
+    }
+
+    .genre-notification .genre-name {
+        font-size: 0.9rem;
+    }
+}
+
+/* ========================================================
+   RESPONSIVE LAYER (comprehensive)
+   Placed at the end of the file so these rules override any
+   earlier, less-specific media queries via cascade order.
+   Breakpoints:
+     - Tablet   : max-width 1024px
+     - Mobile   : max-width 768px
+     - Small    : max-width 480px
+     - Landscape mobile : max-height 500px + landscape
+   ======================================================== */
+
+/* --- Tablet (<= 1024px) --- */
+@media (max-width: 1024px) {
+    .container {
+        padding: 1.5rem;
+        padding-top: 5rem;
+    }
+
+    .combo-counter {
+        min-width: 80px;
+        padding: 1rem 0.8rem;
+    }
+
+    .combo-value {
+        font-size: 2.2rem;
+    }
+
+    .multiplier {
+        padding: 0.5rem 1rem;
+    }
+
+    .multiplier-value {
+        font-size: 1.3rem;
+    }
+
+    .game-area {
+        gap: 0.5rem;
+    }
+
+    .visual-keyboard {
+        transform: scale(0.85);
+        transform-origin: center center;
+    }
+
+    .results-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+    }
+
+    .result-card {
+        padding: 1rem;
+    }
+
+    .result-card .value {
+        font-size: 1.8rem;
+    }
+}
+
+/* --- Mobile (<= 768px) --- */
+@media (max-width: 768px) {
+    .header {
+        padding: 1.5rem;
+    }
+
+    .logo {
+        font-size: 1.3rem;
+    }
+
+    .container {
+        padding: 1rem;
+        padding-top: 4.5rem;
+        height: calc(100vh - 60px);
+    }
+
+    /* Stack the game area vertically on narrow screens so the falling
+       words, keyboard and combo panel don't fight for horizontal space. */
+    .game-area {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    /* Combo display becomes a horizontal strip on top of the game area. */
+    .combo-display {
+        flex-direction: row;
+        justify-content: center;
+        gap: 1rem;
+        margin-bottom: 0.5rem;
+        order: -1;
+    }
+
+    .combo-counter {
+        min-width: 70px;
+        padding: 0.8rem;
+        flex-direction: row;
+        gap: 0.5rem;
+    }
+
+    .combo-value {
+        font-size: 1.8rem;
+    }
+
+    .combo-label {
+        font-size: 0.6rem;
+        margin-top: 0;
+    }
+
+    .multiplier {
+        padding: 0.5rem 0.8rem;
+    }
+
+    .multiplier-value {
+        font-size: 1.2rem;
+    }
+
+    .text-display {
+        min-height: 250px;
+        font-size: 1.1rem;
+    }
+
+    /* Shrink the visual keyboard but keep it centered so it fits. */
+    .visual-keyboard {
+        transform: scale(0.7);
+        transform-origin: center top;
+        max-height: 200px;
+        margin: 0 auto;
+    }
+
+    /* Compact stats bar. */
+    .stats-bar {
+        gap: 1rem;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin-bottom: 1rem;
+    }
+
+    .stat-value {
+        font-size: 1.4rem;
+    }
+
+    /* Accumulated sentences zone. */
+    .accumulated-sentences {
+        font-size: 1rem;
+        padding: 0.8rem;
+        min-height: 60px;
+    }
+
+    /* Results grid: 2 cols instead of 5. */
+    .results-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.8rem;
+    }
+
+    .result-card {
+        padding: 0.8rem;
+    }
+
+    .result-card .value {
+        font-size: 1.5rem;
+    }
+
+    .result-card .label {
+        font-size: 0.6rem;
+    }
+
+    /* Difficulty menu stacks vertically. */
+    .difficulty-cards {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .difficulty-card {
+        width: 100%;
+        max-width: 300px;
+        padding: 1.5rem;
+    }
+
+    /* Genre-change notification: keep out of the way on narrow screens. */
+    .genre-notification {
+        top: 4.5rem;
+        right: 0.8rem;
+        padding: 0.6rem 1rem;
+        max-width: 200px;
+    }
+
+    .genre-notification .genre-name {
+        font-size: 0.95rem;
+    }
+
+    /* Hint row + regresar button reflows so the button never hides
+       behind the start hint. */
+    .hint-row {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .hint-row .back-to-menu-btn {
+        position: static;
+        margin-top: 0;
+    }
+}
+
+/* --- Small mobile (<= 480px) --- */
+@media (max-width: 480px) {
+    .header {
+        padding: 1rem;
+    }
+
+    .logo {
+        font-size: 1.1rem;
+    }
+
+    .container {
+        padding: 0.5rem;
+        padding-top: 4rem;
+    }
+
+    .combo-value {
+        font-size: 1.5rem;
+    }
+
+    .multiplier-value {
+        font-size: 1rem;
+    }
+
+    .visual-keyboard {
+        transform: scale(0.55);
+    }
+
+    .text-display {
+        min-height: 200px;
+        font-size: 1rem;
+    }
+
+    .falling-word {
+        font-size: 1.3rem !important;
+    }
+
+    .accumulated-sentences {
+        font-size: 0.9rem;
+    }
+
+    .stats-bar {
+        gap: 0.6rem;
+    }
+
+    .stat-value {
+        font-size: 1.2rem;
+    }
+
+    .stat-label {
+        font-size: 0.55rem;
+    }
+
+    .results-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem;
+    }
+
+    .result-card {
+        padding: 0.6rem;
+    }
+
+    .result-card .value {
+        font-size: 1.2rem;
+    }
+
+    .difficulty-card {
+        padding: 1.2rem;
+    }
+
+    .difficulty-name {
+        font-size: 1rem;
+    }
+
+    .difficulty-desc {
+        font-size: 0.7rem;
+    }
+
+    .menu-subtitle {
+        font-size: 0.8rem;
+        margin-bottom: 2rem;
+    }
+
+    /* Statistics dashboard tweaks for very small screens. */
+    .dashboard-header h2 {
+        font-size: 1.2rem;
+    }
+
+    .overall-stats {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.6rem;
+    }
+
+    .overall-stats .stat-card {
+        padding: 1rem;
+    }
+
+    .overall-stats .stat-value {
+        font-size: 1.5rem;
+    }
+
+    .overall-stats .stat-icon {
+        font-size: 1.5rem;
+    }
+}
+
+/* --- Landscape mobile ---
+   Very short viewports (phone in landscape). Compress vertical spacing
+   so the falling-words track and keyboard both stay visible. */
+@media (max-height: 500px) and (orientation: landscape) {
+    .container {
+        padding-top: 3.5rem;
+    }
+
+    .header {
+        padding: 0.8rem;
+    }
+
+    .text-display {
+        min-height: 180px;
+    }
+
+    .visual-keyboard {
+        transform: scale(0.6);
+    }
+
+    /* In landscape the combo display fits comfortably at the bottom
+       right without covering the falling words. */
+    .combo-display {
+        flex-direction: row;
+        order: 0;
+        gap: 0.5rem;
     }
 }
