@@ -293,29 +293,37 @@
     <!-- Statistics Dashboard (original) -->
     <div class="stats-dashboard" id="statsDashboard" style="display: none;">
         <div class="dashboard-header">
-            <h2><img src="img/img-statistics.png" alt="Estadísticas" class="dashboard-title-icon"> Estadísticas</h2>
+            <h2><img src="img/img-statistics.png" alt="" class="dashboard-title-icon"> Estadísticas</h2>
             <button class="back-btn" onclick="closeStatsDashboard()">← Regresar</button>
         </div>
 
         <!-- Overall Statistics Cards -->
         <div class="overall-stats">
             <div class="stat-card">
-                <div class="stat-icon">📝</div>
+                <div class="stat-icon"><img src="img/img-words.png" alt="" class="stat-icon-img"></div>
                 <div class="stat-value" id="dashTotalWords">0</div>
                 <div class="stat-label">Palabras totales</div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon">⏱️</div>
+                <div class="stat-icon"><img src="img/img-time.png" alt="" class="stat-icon-img"></div>
                 <div class="stat-value" id="dashTotalTime">0</div>
                 <div class="stat-label">Tiempo en minutos</div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon">⚡</div>
+                <div class="stat-icon">
+                    <div class="stat-item-icon">
+                        <div class="stat-item-icon-label">wpm</div>
+                    </div>
+                </div>
                 <div class="stat-value" id="dashBestWpm">0</div>
                 <div class="stat-label">Mejor WPM</div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon">🔥</div>
+                <div class="stat-icon">
+                    <div class="combo-counter">
+                        <div class="combo-label">COMBO</div>
+                    </div>
+                </div>
                 <div class="stat-value" id="dashBestCombo">0</div>
                 <div class="stat-label">Mejor Combo</div>
             </div>

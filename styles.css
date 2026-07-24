@@ -1247,8 +1247,61 @@ body {
 }
 
 .overall-stats .stat-icon {
-    font-size: 2.5rem;
     margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.overall-stats .stat-icon .combo-counter {
+    padding: 0.4rem 0.5rem;
+    min-width: 48px;
+    width: 48px;
+    height: 48px;
+    justify-content: center;
+    border-radius: 8px;
+}
+
+.overall-stats .stat-icon .combo-value {
+    font-size: 1.2rem;
+}
+
+.overall-stats .stat-icon .combo-label {
+    font-size: 0.6rem;
+    margin-top: 0;
+}
+
+.overall-stats .stat-icon .stat-item-icon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    background: rgba(49, 50, 68, 0.9);
+    border: 2px solid #89b4fa;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(137, 180, 250, 0.3);
+}
+
+.overall-stats .stat-icon .stat-item-icon-value {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #89b4fa;
+    line-height: 1;
+}
+
+.overall-stats .stat-icon .stat-item-icon-label {
+    font-size: 0.75rem;
+    color: #585b70;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.overall-stats .stat-icon-img {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
 }
 
 .overall-stats .stat-value {
@@ -1517,12 +1570,9 @@ body {
         padding: 1.5rem 1rem;
     }
 
-    .overall-stats .stat-icon {
-        font-size: 2rem;
-    }
-
-    .overall-stats .stat-value {
-        font-size: 2rem;
+    .overall-stats .stat-icon-img {
+        width: 40px;
+        height: 40px;
     }
 
     .chart-container {
@@ -1945,8 +1995,9 @@ body {
         font-size: 1.5rem;
     }
 
-    .overall-stats .stat-icon {
-        font-size: 1.5rem;
+    .overall-stats .stat-icon-img {
+        width: 32px;
+        height: 32px;
     }
 }
 

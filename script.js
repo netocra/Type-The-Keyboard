@@ -2203,11 +2203,11 @@ function showGenreChangeNotification(genre) {
     `;
     document.body.appendChild(notification);
 
-    // Auto-remove after ~3s with a fade-out animation
+    // Auto-remove after ~5s with a fade-out animation
     setTimeout(() => {
         notification.classList.add('fade-out');
         setTimeout(() => {
             if (notification.parentNode) notification.remove();
         }, 500);
-    }, 3000);
+    }, 5000);
 }
