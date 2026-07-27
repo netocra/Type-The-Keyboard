@@ -16,32 +16,35 @@
 
     <!-- MENÚ DE DIFICULTAD  -->
     <div class="menu-screen" id="menuScreen">
-        <div class="menu-subtitle">Escribe lo más rápido que puedas. La bomba te persigue — si te alcanza, pierdes la
-            palabra. Elige tu dificultad:</div>
+        <div class="menu-subtitle">Escribe lo más rápido que puedas. Si tecleas mal, pierdes la palabra. <button
+                class="about-game-btn" onclick="showAboutGame()">Acerca del juego</button></div>
 
         <div class="difficulty-cards">
             <div class="difficulty-card easy" onclick="selectDifficulty('easy')">
                 <div class="difficulty-icon"><img src="img/img-easy.png" alt="Fácil"></div>
                 <div class="difficulty-name">Fácil</div>
-                <div class="difficulty-desc">La bomba avanza lento. Ideal para principiantes que están aprendiendo a
-                    ubicar las teclas.</div>
-                <div class="difficulty-speed">💣 Velocidad: 1.0</div>
+                <div class="difficulty-desc">Las palabras caen lento. Ideal para principiantes. Juego de 15 palabras.
+                </div>
+                <div class="difficulty-speed"><img src="img/img-x1.png" alt="Velocidad" class="speed-icon">
+                    Velocidad 1.0</div>
             </div>
 
             <div class="difficulty-card medium" onclick="selectDifficulty('medium')">
                 <div class="difficulty-icon"><img src="img/img-medium.png" alt="Medio"></div>
                 <div class="difficulty-name">Medio</div>
-                <div class="difficulty-desc">Velocidad moderada. Para quienes ya conocen el teclado y quieren mejorar su
-                    ritmo.</div>
-                <div class="difficulty-speed">💣 Velocidad: 1.5</div>
+                <div class="difficulty-desc">Las palabras caen moderadamente. Ideal para conocedores. Juego de 25
+                    palabras.</div>
+                <div class="difficulty-speed"><img src="img/img-x1.5.png" alt="Velocidad" class="speed-icon">
+                    Velocidad 1.5</div>
             </div>
 
             <div class="difficulty-card hard" onclick="selectDifficulty('hard')">
                 <div class="difficulty-icon"><img src="img/img-hard.png" alt="Difícil"></div>
                 <div class="difficulty-name">Difícil</div>
-                <div class="difficulty-desc">La bomba es implacable. Solo para expertos con reflejos rápidos y dedos
-                    ágiles.</div>
-                <div class="difficulty-speed">💣 Velocidad: 2.5</div>
+                <div class="difficulty-desc">Las palabras caen a gran velocidad. Ideal para expertos. Juego de 30
+                    palabras.</div>
+                <div class="difficulty-speed"><img src="img/img-x2.5.png" alt="Velocidad" class="speed-icon">
+                    Velocidad 2.5</div>
             </div>
         </div>
 
@@ -52,10 +55,30 @@
             </div>
             <span class="lang-label" id="langEn">English</span>
         </div>
+
+        <!-- View Stats Button -->
+        <button class="view-stats-btn" onclick="showStatsDashboard()">
+            <img src="img/img-statistics.png" alt="Estadísticas" class="stats-btn-icon"> Ver Estadísticas
+        </button>
     </div>
 
     <!-- JUEGO -->
     <div class="container" id="gameContainer" style="display:none;">
+        <!-- Multiplier Display -->
+        <div class="multiplier-display" id="multiplierDisplay">
+            <div class="multiplier-label">MULTIPLIER</div>
+        </div>
+
+        <!-- Achievement Notification -->
+        <div class="achievement-notification" id="achievementNotification" style="display:none;">
+            <div class="achievement-icon" id="achievementIcon">🏆</div>
+            <div class="achievement-text" id="achievementText"></div>
+        </div>
+
+        <!-- Canvas for Effects -->
+        <canvas id="effectsCanvas"
+            style="position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:10;"></canvas>
+
         <!-- Stats en vivo -->
         <div class="stats-bar" id="statsBar">
             <div class="stat-item">
@@ -85,12 +108,34 @@
             <!-- Palabras completadas aparecerán aquí -->
         </div>
 
-        <!-- Zona de escritura -->
-        <div class="text-display" id="textDisplay" tabindex="0">
-            <!-- Words will be dynamically inserted here -->
+        <!-- Zona de juego: palabras + teclado lado a lado -->
+        <div class="game-area">
+            <!-- Zona de escritura -->
+            <div class="text-display" id="textDisplay" tabindex="0">
+                <!-- Words will be dynamically inserted here -->
+            </div>
+
+            <!-- Visual Keyboard -->
+            <div class="visual-keyboard" id="visualKeyboard">
+                <!-- Keyboard rows will be dynamically generated -->
+            </div>
+
+            <!-- Combo Display (sits as a third column to the right of the keyboard) -->
+            <div class="combo-display" id="comboDisplay">
+                <div class="combo-counter">
+                    <div class="combo-value" id="comboValue">0</div>
+                    <div class="combo-label">COMBO</div>
+                </div>
+                <div class="multiplier">
+                    <div class="multiplier-value" id="multiplierValue">1x</div>
+                </div>
+            </div>
         </div>
 
-        <span class="start-hint" id="startHint">Presiona Enter para iniciar...</span>
+        <div class="hint-row">
+            <span class="start-hint" id="startHint">Presiona Enter para iniciar...</span>
+            <button class="back-to-menu-btn" onclick="goToMenu()">← Regresar</button>
+        </div>
 
         <!-- Resultados -->
         <div class="results" id="results">
@@ -111,13 +156,211 @@
                     <div class="value" id="resultMissed">0</div>
                     <div class="label">Perdidas</div>
                 </div>
+                <div class="result-card">
+                    <div class="value" id="resultCombo">0</div>
+                    <div class="label">Mejor Combo</div>
+                </div>
             </div>
             <button class="restart-btn" onclick="restartGame()">Reiniciar</button>
+            <div class="restart-hint">Presiona <kbd>Enter</kbd> para volver a jugar</div>
         </div>
-
-        <button class="back-to-menu-btn" onclick="goToMenu()">← Regresar</button>
     </div>
 
+    <!-- About Game Panel -->
+    <div class="about-dashboard" id="aboutDashboard" style="display: none;">
+        <div class="dashboard-header">
+            <h2><img src="img/img-Acerda_del_juego.png" alt="Acerca del juego" class="dashboard-title-icon about-icon">
+                Acerca del juego</h2>
+            <button class="back-btn" onclick="closeAboutGame()">← Regresar</button>
+        </div>
+
+        <!-- Game Description -->
+        <div class="about-section">
+            <h3>¿Qué es Type The Keyboard?</h3>
+            <p class="about-text">Type The Keyboard es un juego de mecanografía donde las palabras caen desde arriba
+                hacia abajo tipo carrusel y debes escribirlas antes de que lleguen al fondo. Mejorarás tu velocidad y
+                precisión al escribir mientras te diviertes.</p>
+        </div>
+
+        <!-- How to Play -->
+        <div class="about-section">
+            <h3>¿Cómo jugar?</h3>
+            <div class="about-steps">
+                <div class="about-step">
+                    <div class="step-number">1</div>
+                    <div class="step-text">Elige una dificultad: Fácil, Medio o Difícil. Cada una controla la velocidad
+                        a la que caen las palabras.</div>
+                </div>
+                <div class="about-step">
+                    <div class="step-number">2</div>
+                    <div class="step-text">Presiona <strong>ENTER</strong> para iniciar la partida.</div>
+                </div>
+                <div class="about-step">
+                    <div class="step-number">3</div>
+                    <div class="step-text">Escribe cada palabra antes de que desaparezca. Si la escribes correctamente,
+                        se acumula arriba.</div>
+                </div>
+                <div class="about-step">
+                    <div class="step-number">4</div>
+                    <div class="step-text">Mantén un combo de aciertos para multiplicar tus puntos hasta 5x.</div>
+                </div>
+                <div class="about-step">
+                    <div class="step-number">5</div>
+                    <div class="step-text">Alcanza la mayor cantidad de palabras posibles para mejorar tu aprendizaje y
+                        dominar el teclado.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Purpose -->
+        <div class="about-section">
+            <h3>¿Propósito del juego?</h3>
+            <p class="about-text">El propósito de Type The Keyboard es ayudarte a mejorar tu velocidad y precisión al
+                escribir en el teclado de forma divertida y dinámica. A través de la práctica constante, desarrollarás
+                habilidades como memoria muscular, reducirás errores y aumentarás tu productividad al teclear en el día
+                a día.</p>
+        </div>
+
+        <!-- Glossary -->
+        <div class="about-section">
+            <h3>Glosario de términos</h3>
+            <div class="about-steps">
+                <div class="about-step">
+                    <div class="step-number glossary-term">wpm</div>
+                    <div class="step-text"><strong>WPM (Words Per Minute)</strong> — Palabras por minuto. Mide la
+                        velocidad a la que escribes. Se calcula dividiendo las palabras correctas entre el tiempo
+                        transcurrido en minutos.</div>
+                </div>
+                <div class="about-step">
+                    <div class="step-number glossary-term">acc</div>
+                    <div class="step-text"><strong>ACC (Accuracy)</strong> — Precisión. Es el porcentaje de palabras
+                        escritas correctamente respecto al total de palabras intentadas. 100% significa que no cometiste
+                        ningún error.</div>
+                </div>
+                <div class="about-step">
+                    <div class="step-number glossary-combo">0</div>
+                    <div class="step-text"><strong>Combo</strong> — Racha de aciertos consecutivos. Cada carácter
+                        correcto incrementa tu combo. Si te equivocas, el combo se reinicia a cero.</div>
+                </div>
+                <div class="about-step">
+                    <div class="step-number glossary-multiplier">1x</div>
+                    <div class="step-text"><strong>Multiplicador</strong> — Se activa según tu combo. A mayor combo,
+                        mayor multiplicador de puntos: 1-5 = 1x, 6-15 = 2x, 16-25 = 3x, 26-40 = 4x, 41+ = 5x.</div>
+                </div>
+                <div class="about-step">
+                    <div class="step-number glossary-term">pts</div>
+                    <div class="step-text"><strong>Puntos</strong> — Se obtienen 10 puntos base por cada palabra
+                        completada, multiplicados por tu multiplicador actual. Completar una oración otorga un bono de
+                        100 puntos extra.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Difficulties -->
+        <div class="about-section">
+            <h3>Dificultades</h3>
+            <p class="about-text">Cada dificultad determina la velocidad de caída de las palabras y la cantidad de
+                palabras por partida:</p>
+            <div class="about-steps">
+                <div class="about-step">
+                    <img src="img/img-easy.png" alt="Fácil" class="difficulty-step-icon">
+                    <div class="step-number difficulty-badge easy-badge">Fácil</div>
+                    <div class="step-text"><strong>15 palabras</strong> (3 oraciones × 5 palabras). Velocidad de caída:
+                        <strong>1.0 px/frame</strong>. Las palabras bajan 1 píxel por cada cuadro de animación (60 fps),
+                        dándote el mayor tiempo posible para escribir.
+                    </div>
+                </div>
+                <div class="about-step">
+                    <img src="img/img-medium.png" alt="Medio" class="difficulty-step-icon">
+                    <div class="step-number difficulty-badge medium-badge">Medio</div>
+                    <div class="step-text"><strong>25 palabras</strong> (5 oraciones × 5 palabras). Velocidad de caída:
+                        <strong>1.5 px/frame</strong>. Las palabras caen 1.5 veces más rápido que en fácil, exigiendo
+                        mayor agilidad.
+                    </div>
+                </div>
+                <div class="about-step">
+                    <img src="img/img-hard.png" alt="Difícil" class="difficulty-step-icon">
+                    <div class="step-number difficulty-badge hard-badge">Difícil</div>
+                    <div class="step-text"><strong>30 palabras</strong> (6 oraciones × 5 palabras). Velocidad de caída:
+                        <strong>2.5 px/frame</strong>. Las palabras caen 2.5 veces más rápido que en fácil, requiriendo
+                        reflejos y precisión de experto.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Dashboard (original) -->
+    <div class="stats-dashboard" id="statsDashboard" style="display: none;">
+        <div class="dashboard-header">
+            <h2><img src="img/img-statistics.png" alt="" class="dashboard-title-icon"> Estadísticas</h2>
+            <button class="back-btn" onclick="closeStatsDashboard()">← Regresar</button>
+        </div>
+
+        <!-- Overall Statistics Cards -->
+        <div class="overall-stats">
+            <div class="stat-card">
+                <div class="stat-icon"><img src="img/img-words.png" alt="" class="stat-icon-img"></div>
+                <div class="stat-value" id="dashTotalWords">0</div>
+                <div class="stat-label">Palabras totales</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><img src="img/img-time.png" alt="" class="stat-icon-img"></div>
+                <div class="stat-value" id="dashTotalTime">0</div>
+                <div class="stat-label">Tiempo en minutos</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <div class="stat-item-icon">
+                        <div class="stat-item-icon-label">wpm</div>
+                    </div>
+                </div>
+                <div class="stat-value" id="dashBestWpm">0</div>
+                <div class="stat-label">Mejor WPM</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <div class="combo-counter">
+                        <div class="combo-label">COMBO</div>
+                    </div>
+                </div>
+                <div class="stat-value" id="dashBestCombo">0</div>
+                <div class="stat-label">Mejor Combo</div>
+            </div>
+        </div>
+
+        <!-- Historical Accuracy Chart -->
+        <div class="chart-section">
+            <h3>Precisión Histórica</h3>
+            <div class="chart-container">
+                <canvas id="accuracyChart" width="800" height="300"></canvas>
+            </div>
+        </div>
+
+        <!-- Keyboard Heatmap -->
+        <div class="heatmap-section">
+            <h3>Teclas Problemáticas</h3>
+            <div class="heatmap-container" id="keyboardHeatmap">
+                <!-- Heatmap will be rendered here -->
+            </div>
+            <div class="problematic-keys-list" id="problematicKeysList">
+                <!-- Top 10 problematic keys will be listed here -->
+            </div>
+        </div>
+
+        <!-- Top Difficult Words -->
+        <div class="difficult-words-section">
+            <h3>Palabras Más Difíciles</h3>
+            <div class="difficult-words-list" id="difficultWordsList">
+                <!-- Top 5 difficult words will be listed here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="lib/Tone.js"></script>
+    <script src="audioEngine.js"></script>
+    <script src="keyboardVisualizer.js"></script>
+    <script src="statsTracker.js"></script>
     <script src="script.js"></script>
 </body>
 
